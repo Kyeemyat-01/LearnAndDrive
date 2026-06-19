@@ -143,6 +143,10 @@ function renderLessonList(docs) {
 
 /* ---- Lesson content (live-updating) ---- */
 function selectLesson(el) {
+    if (currentRole === 'guest') {
+        openModal('login');
+        return;
+    }
     document.querySelectorAll('.lesson-item').forEach(i => i.classList.remove('active'));
     el.classList.add('active');
     const slug = el.dataset.lesson;
@@ -154,6 +158,12 @@ function selectLesson(el) {
 
 function watchLesson(slug) {
     if (unsubscribeCurrentLesson) unsubscribeCurrentLesson();
+
+    if (currentRole === 'guest') {
+        renderGuestWelcome();
+        return;
+    }
+
     const box = document.getElementById('lessonContent');
     box.innerHTML = '<p class="lesson-loading">Loading...</p>';
 
@@ -188,6 +198,22 @@ function watchLesson(slug) {
     }, err => {
         box.innerHTML = `<p class="lesson-empty">Error: ${escapeHtml(err.message)}</p>`;
     });
+}
+
+function renderGuestWelcome() {
+    const box = document.getElementById('lessonContent');
+    box.innerHTML = `
+        <div class="lesson-locked">
+            <div class="lesson-locked-icon"><i class="ti ti-steering-wheel"></i></div>
+            <h2 class="lesson-locked-title">Learn&amp;Drive နဲ့ စာမေးပွဲကို ပြင်ဆင်ပါ</h2>
+            <p class="lesson-locked-text">
+                Traffic signs, road rules, quiz အပြည့်အစုံကို lesson ၁၂ ခုနဲ့ ခွဲခြားပေးထားပါတယ်။
+                Lesson အပြည့်အစုံကို ကြည့်ရှု၊ quiz ဖြေဆိုနိုင်ရန် အကောင့်တစ်ခု အခမဲ့ ဖွင့်လိုက်ပါ။
+            </p>
+            <button class="lesson-locked-cta" onclick="openModal('signup')">Sign up free</button>
+            <p class="lesson-locked-alt">အကောင့်ရှိပြီးသားလား? <a onclick="openModal('login')">Log in</a></p>
+        </div>
+    `;
 }
 
 /* ---- Composer: add / edit ---- */
@@ -408,11 +434,12 @@ auth.onAuthStateChanged(async (user) => {
         currentRole = 'guest';
         document.getElementById('authControls').style.display = 'flex';
         document.getElementById('userChip').style.display = 'none';
-        openModal('login');
+        renderGuestWelcome();
     }
 
     document.getElementById('addBox').style.display = currentRole === 'admin' ? 'block' : 'none';
     document.getElementById('lessonAddTrigger').style.display = currentRole === 'admin' ? 'inline-flex' : 'none';
+    document.querySelector('.quiz-section').style.display = currentRole === 'guest' ? 'none' : 'block';
     if (currentLessonSlug) watchLesson(currentLessonSlug);
 });
 
@@ -455,6 +482,29 @@ function handleAuthSubmit() {
 
 function handleLogout() {
     auth.signOut();
+}
+
+function signInWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider)
+        .then(result => {
+            const user = result.user;
+            const isNewUser = result.additionalUserInfo && result.additionalUserInfo.isNewUser;
+            if (isNewUser) {
+                const nameParts = (user.displayName || '').trim().split(' ');
+                const firstName = nameParts[0] || '';
+                const lastName = nameParts.slice(1).join(' ') || '';
+                return usersRef.doc(user.uid).set({
+                    email: user.email,
+                    firstName,
+                    lastName,
+                    role: 'user',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+        })
+        .then(() => closeModal())
+        .catch(err => alert(err.message));
 }
 
 /* ---- Render questions from Firestore ---- */
@@ -662,3 +712,11 @@ function seedInitialQuestions() {
     });
     console.log('Seed ပြီးပါပြီ။');
 }
+
+
+
+
+
+
+//   ------- Footer --------
+document.getElementById('footerYear').textContent = new Date().getFullYear();

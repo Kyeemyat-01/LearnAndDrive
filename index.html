@@ -153,7 +153,16 @@
                     </div>
 
                     <div class="lesson-content" id="lessonContent">
-                        <p class="lesson-empty">ဘယ်ဘက် sidebar ကနေ lesson တစ်ခု ရွေးပါ။</p>
+                        <div class="lesson-locked">
+                            <div class="lesson-locked-icon"><i class="ti ti-steering-wheel"></i></div>
+                            <h2 class="lesson-locked-title">Learn&amp;Drive နဲ့ စာမေးပွဲကို ပြင်ဆင်ပါ</h2>
+                            <p class="lesson-locked-text">
+                                Traffic signs, road rules, quiz အပြည့်အစုံကို lesson ၁၂ ခုနဲ့ ခွဲခြားပေးထားပါတယ်။
+                                Lesson အပြည့်အစုံကို ကြည့်ရှု၊ quiz ဖြေဆိုနိုင်ရန် အကောင့်တစ်ခု အခမဲ့ ဖွင့်လိုက်ပါ။
+                            </p>
+                            <button class="lesson-locked-cta" onclick="openModal('signup')">Sign up free</button>
+                            <p class="lesson-locked-alt">အကောင့်ရှိပြီးသားလား? <a onclick="openModal('login')">Log in</a></p>
+                        </div>
                     </div>
                 </section>
 
@@ -212,6 +221,42 @@
            
         </div>
 
+
+
+
+
+
+
+        <!-- Footer -->
+        <footer class="ld-footer">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <div class="logo-icon"><i class="ti ti-steering-wheel"></i></div>
+                        Learn<span class="accent">&amp;</span>Drive
+                    </div>
+                    <p class="footer-tagline">Lessons, quizzes, and everything you need to pass your driving test — built for learners.</p>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Quick links</h4>
+                    <a href="#" onclick="setActive(event, this)">Features</a>
+                    <a href="#" onclick="setActive(event, this)">About</a>
+                    <a href="#" onclick="setActive(event, this)">Test</a>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Account</h4>
+                    <a onclick="openModal('login')">Log in</a>
+                    <a onclick="openModal('signup')">Sign up</a>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; <span id="footerYear"></span> Learn&amp;Drive. All rights reserved.</p>
+            </div>
+        </footer>
+
        
 
 
@@ -224,47 +269,59 @@
 
         <!-- Auth Model  -->
         <div class="modal-overlay" id="authModal" onclick="handleOverlayClick(event)">
-    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <button class="modal-close" onclick="closeModal()" aria-label="Close">
-            <i class="ti ti-x"></i>
-        </button>
+            <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+                <button class="modal-close" onclick="closeModal()" aria-label="Close">
+                    <i class="ti ti-x"></i>
+                </button>
 
-        <h3 id="modalTitle">Welcome back</h3>
-        <p class="modal-sub">Sign in to continue your driving journey.</p>
+                <h3 id="modalTitle">Welcome back</h3>
+                <p class="modal-sub">Sign in to continue your driving journey.</p>
 
-        <div class="modal-field name-fields" id="nameFields" style="display:none;">
-            <div class="modal-field-half">
-                <label for="firstName">First name</label>
-                <input type="text" id="firstName" placeholder="John" />
+                <div class="modal-field name-fields" id="nameFields" style="display:none;">
+                    <div class="modal-field-half">
+                        <label for="firstName">First name</label>
+                        <input type="text" id="firstName" placeholder="John" />
+                    </div>
+                    <div class="modal-field-half">
+                        <label for="lastName">Last name</label>
+                        <input type="text" id="lastName" placeholder="Doe" />
+                    </div>
+                </div>
+
+                <div class="modal-field">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="you@example.com" />
+                </div>
+
+                <div class="modal-field" id="birthdayField" style="display:none;">
+                    <label for="birthday">Birthday</label>
+                    <input type="date" id="birthday" />
+                </div>
+
+                <div class="modal-field">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="••••••••" />
+                </div>
+
+                <button class="modal-submit" onclick="handleAuthSubmit()">Log in</button>
+
+                <div class="modal-divider"><span>or</span></div>
+
+                <button type="button" class="google-signin-btn" onclick="signInWithGoogle()">
+                    <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+                        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                        <path fill="#FBBC05" d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"/>
+                        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.962L3.964 7.294C4.672 5.167 6.656 3.58 9 3.58z"/>
+                    </svg>
+                    Continue with Google
+                </button>
+
+                <p class="modal-footer">
+                    No account? <a onclick="switchToSignup()">Sign up free</a>
+                </p>
+
             </div>
-            <div class="modal-field-half">
-                <label for="lastName">Last name</label>
-                <input type="text" id="lastName" placeholder="Doe" />
-            </div>
-        </div>
-
-        <div class="modal-field">
-            <label for="email">Email</label>
-            <input type="email" id="email" placeholder="you@example.com" />
-        </div>
-
-        <div class="modal-field" id="birthdayField" style="display:none;">
-            <label for="birthday">Birthday</label>
-            <input type="date" id="birthday" />
-        </div>
-
-        <div class="modal-field">
-            <label for="password">Password</label>
-            <input type="password" id="password" placeholder="••••••••" />
-        </div>
-
-        <button class="modal-submit" onclick="handleAuthSubmit()">Log in</button>
-
-        <p class="modal-footer">
-            No account? <a onclick="switchToSignup()">Sign up free</a>
-        </p>
-
-    </div>
         </div>
 
 
