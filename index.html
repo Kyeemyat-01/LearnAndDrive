@@ -4,7 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Learn&Drive</title>
-        <link rel="stylesheet" href="stylesheet.css">
+        <link rel="stylesheet" href="css/stylesheet.css">
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
@@ -140,12 +140,15 @@
                             <textarea id="newLessonBody" rows="5" placeholder="Lesson content... (HTML paragraphs <p>...</p> ok)"></textarea>
                         </div>
                         <div class="lesson-form-field">
-                            <label for="newLessonImage">Image URL (optional)</label>
-                            <input type="text" id="newLessonImage" placeholder="https://example.com/sign.png" />
+                            <label>Images (optional)</label>
+                            <div class="lesson-images-list" id="lessonImagesList"></div>
+                            <button type="button" class="lesson-image-add" onclick="addImageRow()">
+                                <i class="ti ti-plus"></i> Add image
+                            </button>
                         </div>
                         <div class="lesson-form-actions">
                             <button type="button" class="lesson-cancel" onclick="closeLessonComposer()">Cancel</button>
-                            <button type="button" class="lesson-save" id="lessonSaveBtn" onclick="saveLessonForm()">Post lesson</button>
+                            <button type="button" class="lesson-save" id="lessonSaveBtn" onclick="saveLessonForm()">Save lesson</button>
                         </div>
                     </div>
 
@@ -192,7 +195,7 @@
 
                                 <div class="add-actions">
                                     <button type="button" class="add-cancel" onclick="toggleAddForm(false)">Cancel</button>
-                                    <button type="button" class="add-post" onclick="postQuestion()">Post question</button>
+                                    <button type="button" class="add-post" onclick="postQuestion()">Save question</button>
                                 </div>
                             </div>
                         </div>
@@ -277,8 +280,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script src="firebase.js"></script>
-    <script src="script.js"></script>
+    <script src="js/firebase.js"></script>
+    <script src="js/script.js"></script>
 
     </body>
 </html>

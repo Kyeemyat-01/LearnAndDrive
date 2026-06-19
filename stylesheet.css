@@ -568,16 +568,130 @@ html, body {
     margin-bottom: 14px;
 }
 .lesson-image {
-    max-width: 100%;
     border-radius: 10px;
-    margin-bottom: 16px;
     display: block;
+    width: 100%;
 }
+.lesson-image-figure { margin-bottom: 16px; }
+.lesson-image-caption {
+    font-size: 12.5px;
+    color: #8A9BB0;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+.lesson-image-figure.lesson-image-small { width: 140px; max-width: 45%; }
+.lesson-image-figure.lesson-image-medium { width: 100%; max-width: 320px; }
+.lesson-image-figure.lesson-image-large { width: 100%; max-width: 100%; }
+.lesson-image-row .lesson-image-figure { margin-bottom: 0; }   /* .lesson-image → .lesson-image-figure ပြောင်း */
+.lesson-image-small { width: 140px; max-width: 45%; }
+.lesson-image-medium { width: 100%; max-width: 320px; }
+.lesson-image-large { width: 100%; max-width: 100%; }
+
+.lesson-image-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.lesson-image-row .lesson-image { margin-bottom: 0; }
 .lesson-body {
     font-size: 14.5px;
     color: #3A3927;
     line-height: 1.75;
 }
+.lesson-images-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.lesson-image-row-edit {
+    display: flex;
+    flex-direction: column;   /* row → column ပြောင်း */
+    gap: 8px;
+    padding: 10px;
+    background: #F4F2E8;
+    border: 1px solid #E4DFB8;
+    border-radius: 10px;
+}
+.lesson-image-row-edit-main {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.lesson-image-caption-input {
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid #D0CAAA;
+    border-radius: 9px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    color: #2B2A1F;
+    outline: none;
+}
+.lesson-image-caption-input:focus { border-color: #FA7070; }
+.lesson-image-row-edit .lesson-image-url {
+    flex: 1;
+    background: #fff;
+    border: 1.5px solid #D0CAAA;
+    border-radius: 9px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    color: #2B2A1F;
+    outline: none;
+}
+.lesson-image-row-edit .lesson-image-url:focus { border-color: #FA7070; }
+.lesson-image-size {
+    background: #fff;
+    border: 1.5px solid #D0CAAA;
+    border-radius: 9px;
+    padding: 8px 6px;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    color: #2B2A1F;
+}
+.lesson-image-remove {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid #D0CAAA;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: #5A6F8C;
+    flex-shrink: 0;
+}
+.lesson-image-remove:hover { border-color: #FA7070; color: #A02020; background: #FDDADA; }
+
+.lesson-image-insert {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid #D0CAAA;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: #5A6F8C;
+    flex-shrink: 0;
+}
+.lesson-image-insert:hover { border-color: #A1C398; color: #2E5E2A; background: #F4F2E8; }
+
+.lesson-image-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #2E5E2A;
+    background: #C6EBC5;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.lesson-image-add:hover { background: #A1C398; }
 .lesson-body p { margin-bottom: 12px; }
 .lesson-empty, .lesson-loading {
     font-size: 13.5px;

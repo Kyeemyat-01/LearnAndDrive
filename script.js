@@ -26,6 +26,7 @@ function closeLangMenu() {
     document.getElementById('langBtn').setAttribute('aria-expanded', 'false');
 }
 
+/* Close on Escape */
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         closeModal();
@@ -36,7 +37,7 @@ document.addEventListener('keydown', e => {
 
 /* Active nav link */
 function setActive(e, el) {
-    e.ventDefault();
+    e.preventDefault();
     document.querySelectorAll('.ld-nav a').forEach(a => a.classList.remove('active'));
     el.classList.add('active');
 }
@@ -94,14 +95,6 @@ function handleOverlayClick(e) {
 }
 
 function switchToSignup() { openModal('signup'); }
-
-/* Close on Escape */
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-        closeModal();
-        closeLangMenu();
-    }
-});
 
 /*   Select lessons   */
 
@@ -170,6 +163,16 @@ function watchLesson(slug) {
             return;
         }
         const data = doc.data();
+        let images = data.images || [];
+        if (!images.length && data.imageUrl) {
+            images = [{ url: data.imageUrl, size: 'large' }];
+        }
+
+        const bodyHtml = localized(data.body);
+        const usedIndices = getUsedImageIndices(bodyHtml);
+        const remainingImages = images.filter((img, idx) => !usedIndices.has(idx));
+        const bodyWithImages = renderBodyWithImages(bodyHtml, images);
+
         box.innerHTML = `
             <div class="lesson-title-row">
                 <h2 class="lesson-title">${escapeHtml(localized(data.title))}</h2>
@@ -179,8 +182,8 @@ function watchLesson(slug) {
                     <button class="q-icon-btn danger" title="ဖျက်" onclick="deleteLesson('${doc.id}')"><i class="ti ti-trash"></i></button>
                 </div>` : ''}
             </div>
-            ${data.imageUrl ? `<img class="lesson-image" src="${data.imageUrl}" alt="" />` : ''}
-            <div class="lesson-body">${localized(data.body)}</div>
+            ${renderLessonImages(remainingImages)}
+            <div class="lesson-body">${bodyWithImages}</div>
         `;
     }, err => {
         box.innerHTML = `<p class="lesson-empty">Error: ${escapeHtml(err.message)}</p>`;
@@ -192,8 +195,8 @@ function openLessonComposer() {
     editingLessonId = null;
     document.getElementById('newLessonTitle').value = '';
     document.getElementById('newLessonBody').value = '';
-    document.getElementById('newLessonImage').value = '';
-    document.getElementById('lessonSaveBtn').textContent = 'Post lesson';
+    clearImageRows();
+    document.getElementById('lessonSaveBtn').textContent = 'Save lesson';
     document.getElementById('lessonFormBox').style.display = 'flex';
     document.getElementById('lessonFormBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -210,13 +213,16 @@ function editLesson(id) {
         editingLessonId = id;
         document.getElementById('newLessonTitle').value = getLangField(data.title, 'en');
         document.getElementById('newLessonBody').value = getLangField(data.body, 'en');
-        document.getElementById('newLessonImage').value = data.imageUrl || '';
+        clearImageRows();
+        (data.images || []).forEach(img => addImageRow(img.url, img.size, img.caption || ''));
+        if (!data.images && data.imageUrl) {
+            addImageRow(data.imageUrl, 'large');
+        }
         document.getElementById('lessonSaveBtn').textContent = 'Save changes';
         document.getElementById('lessonFormBox').style.display = 'flex';
         document.getElementById('lessonFormBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
 }
-
 function deleteLesson(id) {
     if (!confirm('ဒီ Lesson ကို ဖျက်မှာ သေချာပါသလား?')) return;
     lessonsRef.doc(id).delete().catch(err => alert(err.message));
@@ -225,7 +231,7 @@ function deleteLesson(id) {
 function saveLessonForm() {
     const title = document.getElementById('newLessonTitle').value.trim();
     const body = document.getElementById('newLessonBody').value.trim();
-    const imageUrl = document.getElementById('newLessonImage').value.trim();
+    const images = collectImageRows();
 
     if (!title || !body) {
         alert('Title နဲ့ Content ကိုဖြည့်ပါ။');
@@ -248,17 +254,17 @@ function saveLessonForm() {
         }
     }
 
-    const payload = { title: titleObj, body: bodyObj };
-    if (imageUrl) {
-        payload.imageUrl = imageUrl;
-    } else if (editingLessonId) {
-        payload.imageUrl = firebase.firestore.FieldValue.delete();
-    }
-
     const action = editingLessonId
-        ? lessonsRef.doc(editingLessonId).update(payload)
+        ? lessonsRef.doc(editingLessonId).update({
+            title: titleObj,
+            body: bodyObj,
+            images,
+            imageUrl: firebase.firestore.FieldValue.delete()
+        })
         : lessonsRef.add({
-            ...payload,
+            title: titleObj,
+            body: bodyObj,
+            images,
             order: Date.now(),
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -269,8 +275,108 @@ function saveLessonForm() {
         alert(err.message);
     }).finally(() => {
         saveBtn.disabled = false;
-        saveBtn.textContent = editingLessonId ? 'Save changes' : 'Post lesson';
+        saveBtn.textContent = editingLessonId ? 'Save changes' : 'Save lesson';
     });
+}
+
+function addImageRow(url = '', size = 'medium', caption = '') {
+    const list = document.getElementById('lessonImagesList');
+    const row = document.createElement('div');
+    row.className = 'lesson-image-row-edit';
+    row.innerHTML = `
+        <div class="lesson-image-row-edit-main">
+            <input type="text" class="lesson-image-url" placeholder="https://example.com/sign.png" value="${escapeHtml(url)}" />
+            <select class="lesson-image-size">
+                <option value="small" ${size === 'small' ? 'selected' : ''}>Small</option>
+                <option value="medium" ${size === 'medium' ? 'selected' : ''}>Medium</option>
+                <option value="large" ${size === 'large' ? 'selected' : ''}>Large</option>
+            </select>
+            <button type="button" class="lesson-image-insert" title="Content ထဲ ညှပ်ထည့်ရန်" onclick="insertImagePlaceholder(this)"><i class="ti ti-photo-plus"></i></button>
+            <button type="button" class="lesson-image-remove" onclick="this.closest('.lesson-image-row-edit').remove()"><i class="ti ti-x"></i></button>
+        </div>
+        <input type="text" class="lesson-image-caption-input" placeholder="Caption (e.g. Stop sign)" value="${escapeHtml(caption)}" />
+    `;
+    list.appendChild(row);
+}
+
+function collectImageRows() {
+    return Array.from(document.querySelectorAll('#lessonImagesList .lesson-image-row-edit')).map(row => ({
+        url: row.querySelector('.lesson-image-url').value.trim(),
+        size: row.querySelector('.lesson-image-size').value,
+        caption: row.querySelector('.lesson-image-caption-input').value.trim()
+    })).filter(img => img.url);
+}
+
+function clearImageRows() {
+    document.getElementById('lessonImagesList').innerHTML = '';
+}
+
+function renderLessonImages(images) {
+    if (!images || !images.length) return '';
+    let html = '';
+    let i = 0;
+    while (i < images.length) {
+        if (images[i].size !== 'large') {
+            let group = [];
+            while (i < images.length && images[i].size !== 'large') {
+                group.push(images[i]);
+                i++;
+            }
+            html += `<div class="lesson-image-row">` +
+                group.map(img => renderSingleImage(img)).join('') +
+                `</div>`;
+        } else {
+            html += renderSingleImage(images[i]);
+            i++;
+        }
+    }
+    return html;
+}
+
+function renderSingleImage(img) {
+    const captionHtml = img.caption
+        ? `<figcaption class="lesson-image-caption">${escapeHtml(img.caption)}</figcaption>`
+        : '';
+    return `
+        <figure class="lesson-image-figure lesson-image-${img.size}">
+            <img class="lesson-image" src="${img.url}" alt="${escapeHtml(img.caption || '')}" />
+            ${captionHtml}
+        </figure>
+    `;
+}
+
+function getUsedImageIndices(bodyHtml) {
+    const matches = bodyHtml.match(/\{\{img(\d+)\}\}/g) || [];
+    return new Set(matches.map(m => parseInt(m.match(/\d+/)[0], 10) - 1));
+}
+
+function renderBodyWithImages(bodyHtml, images) {
+    if (!images || !images.length) return bodyHtml;
+    return bodyHtml.replace(/(\{\{img\d+\}\}(\s*\{\{img\d+\}\})*)/g, (match) => {
+        const indices = match.match(/\d+/g).map(n => parseInt(n, 10));
+        const imgs = indices.map(idx => images[idx - 1]).filter(Boolean);
+        if (!imgs.length) return '';
+        if (imgs.length === 1) {
+            return renderSingleImage(imgs[0]);
+        }
+        return `<div class="lesson-image-row">` +
+            imgs.map(img => renderSingleImage(img)).join('') +
+            `</div>`;
+    });
+}
+
+function insertImagePlaceholder(button) {
+    const row = button.closest('.lesson-image-row-edit');
+    const allRows = Array.from(document.querySelectorAll('#lessonImagesList .lesson-image-row-edit'));
+    const index = allRows.indexOf(row) + 1;
+    const textarea = document.getElementById('newLessonBody');
+    const placeholder = `{{img${index}}}`;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    textarea.value = text.slice(0, start) + placeholder + text.slice(end);
+    textarea.focus();
+    textarea.selectionStart = textarea.selectionEnd = start + placeholder.length;
 }
 
 /* ============ AUTH + ADMIN ROLE + QUIZ (Firestore) ============ */
@@ -432,7 +538,7 @@ function resetAddForm() {
     document.getElementById('newQuestionExplain').value = '';
     setAnswer(true);
     editingQuestionId = null;
-    document.querySelector('#addForm .add-post').textContent = 'Post question';
+    document.querySelector('#addForm .add-post').textContent = 'Save question';
 }
 
 function toggleUserMenu(e) {
