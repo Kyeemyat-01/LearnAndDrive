@@ -629,6 +629,7 @@ function toggleSidebar(forceOpen) {
     const open = typeof forceOpen === 'boolean' ? forceOpen : !isOpen;
     sidebar.classList.toggle('open', open);
     backdrop.classList.toggle('open', open);
+    document.body.classList.toggle('sidebar-lock', open);
 }
 
 function startEditQuestion(id) {
@@ -713,6 +714,15 @@ function seedInitialQuestions() {
     });
     console.log('Seed ပြီးပါပြီ။');
 }
+
+
+
+
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+        toggleSidebar(false);
+    }
+});
 
 
 

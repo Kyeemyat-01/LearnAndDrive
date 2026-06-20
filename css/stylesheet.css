@@ -1267,9 +1267,12 @@ html, body {
     background: rgba(0,0,0,0.5);
     z-index: 140;
 }
-.sidebar-backdrop.open { display: block; }
 
 @media (max-width: 768px) {
+
+    body.sidebar-lock {
+    overflow: hidden;
+    }
     .menu-toggle { display: flex; align-items: center; }
     .ld-nav { display: none; }
 
@@ -1296,6 +1299,8 @@ html, body {
         box-shadow: 4px 0 24px rgba(0,0,0,0.2);
     }
     .ld-sidebar.open { left: 0; }
+
+    .sidebar-backdrop.open { display: block; }
 
     .ld-main { padding: 18px 16px 30px; }
 
