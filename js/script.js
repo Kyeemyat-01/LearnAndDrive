@@ -624,6 +624,12 @@ function toggleAddForm(forceOpen) {
 
 let sidebarScrollY = 0;
 
+function preventBackgroundTouch(e) {
+    if (!e.target.closest('.ld-sidebar')) {
+        e.preventDefault();
+    }
+}
+
 function toggleSidebar(forceOpen) {
     const sidebar = document.querySelector('.ld-sidebar');
     const backdrop = document.getElementById('sidebarBackdrop');
@@ -638,12 +644,14 @@ function toggleSidebar(forceOpen) {
         document.body.style.top = `-${sidebarScrollY}px`;
         document.body.style.left = '0';
         document.body.style.right = '0';
+        document.addEventListener('touchmove', preventBackgroundTouch, { passive: false });
     } else {
         document.body.style.position = '';
         document.body.style.top = '';
         document.body.style.left = '';
         document.body.style.right = '';
         window.scrollTo(0, sidebarScrollY);
+        document.removeEventListener('touchmove', preventBackgroundTouch, { passive: false });
     }
 }
 
