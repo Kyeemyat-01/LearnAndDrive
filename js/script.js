@@ -622,6 +622,8 @@ function toggleAddForm(forceOpen) {
     if (!open) resetAddForm();
 }
 
+let sidebarScrollY = 0;
+
 function toggleSidebar(forceOpen) {
     const sidebar = document.querySelector('.ld-sidebar');
     const backdrop = document.getElementById('sidebarBackdrop');
@@ -629,7 +631,20 @@ function toggleSidebar(forceOpen) {
     const open = typeof forceOpen === 'boolean' ? forceOpen : !isOpen;
     sidebar.classList.toggle('open', open);
     backdrop.classList.toggle('open', open);
-    document.body.classList.toggle('sidebar-lock', open);
+
+    if (open) {
+        sidebarScrollY = window.scrollY || document.documentElement.scrollTop;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${sidebarScrollY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+    } else {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        window.scrollTo(0, sidebarScrollY);
+    }
 }
 
 function startEditQuestion(id) {

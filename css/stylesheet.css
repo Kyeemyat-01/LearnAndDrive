@@ -1270,9 +1270,6 @@ html, body {
 
 @media (max-width: 768px) {
 
-    body.sidebar-lock {
-    overflow: hidden;
-    }
     .menu-toggle { display: flex; align-items: center; }
     .ld-nav { display: none; }
 
