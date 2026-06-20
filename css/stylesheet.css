@@ -340,6 +340,7 @@ html, body {
     padding: 22px 0 24px;
     overflow-y: auto;
     z-index: 50;
+    -webkit-overflow-scrolling: touch;
 }
 
 .ld-sidebar::-webkit-scrollbar { width: 2px; }
