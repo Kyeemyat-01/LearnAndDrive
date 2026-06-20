@@ -84,11 +84,12 @@ html, body {
     justify-content: center;
     gap: 6px;
     height: 38px;
+    width: 118px;
     font-size: 13.5px;
     color: #f5f5f5;
     background: none;
     border: 1px solid #f5f5f5;
-    padding: 0 12px;
+    padding: 0 10px;
     border-radius: 7px;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
@@ -97,6 +98,13 @@ html, body {
 }
 .lang-btn:hover { border-color: #A1C398; color: #A1C398; }
 .lang-btn i { font-size: 15px; }
+#lang-label {
+    flex: 1;
+    text-align: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}   
 .lang-btn .lang-caret {
     font-size: 12px;
     margin-left: 2px;
@@ -315,26 +323,22 @@ html, body {
 }
 .modal-footer a:hover { text-decoration: underline; }
 
-.ld-body {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-}
+
 
 
 /* ── SIDEBAR ── */
 
 .ld-sidebar {
+    position: fixed;
+    top: 64px;
+    left: 0;
     width: 280px;
+    height: calc(100vh - 64px);
     background: #FEFDED;
     border-right: 1px solid #FA7070;
     padding: 22px 0 24px;
-    position: sticky;
-    top: 64px;
-    height: calc(100vh - 64px);
     overflow-y: auto;
-    flex-shrink: 0;
-    align-self: flex-start;
+    z-index: 50;
 }
 
 .ld-sidebar::-webkit-scrollbar { width: 2px; }
@@ -824,7 +828,7 @@ html, body {
 
 /* ── QUIZ SECTION ── */
 .ld-main {
-    flex: 1;
+    margin-left: 280px;
     padding: 28px 36px 40px;
 }
 
@@ -1260,6 +1264,17 @@ html, body {
     .menu-toggle { display: flex; align-items: center; }
     .ld-nav { display: none; }
 
+    .lang-btn {
+        width: 38px;
+        padding: 0;
+    }
+    #lang-label, .lang-caret {
+        display: none;
+    }
+    .btn-signup {
+        display: none;
+    }
+
     .ld-sidebar {
         position: fixed;
         top: 64px;
@@ -1302,6 +1317,8 @@ html, body {
 
 /*    Footer    */
 .ld-footer {
+    position: relative;
+    z-index: 60;
     padding: 32px 36px 28px;
     border-top: 1px solid #E8E4BE;
     background: #FEFDED;
@@ -1382,4 +1399,5 @@ html, body {
 @media (max-width: 768px) {
     .footer-top { flex-direction: column; gap: 20px; }
     .ld-footer { padding: 24px 16px 20px; }
+    .ld-main { margin-left: 0; }
 }
