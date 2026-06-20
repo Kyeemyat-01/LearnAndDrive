@@ -428,6 +428,7 @@ auth.onAuthStateChanged(async (user) => {
         document.getElementById('authControls').style.display = 'none';
         document.getElementById('userChip').style.display = 'flex';
         document.getElementById('userEmailLabel').textContent = data.firstName || user.email;
+        document.getElementById('userMenuNameLabel').textContent = data.firstName || user.email;
         document.getElementById('roleBadge').textContent = currentRole === 'admin' ? 'Admin' : 'Member';
         document.getElementById('roleBadge').classList.toggle('admin', currentRole === 'admin');
     } else {

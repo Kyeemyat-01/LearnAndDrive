@@ -1048,7 +1048,21 @@ html, body {
     z-index: 150;
 }
 .user-menu.open { display: block; }
-.user-menu-header { padding: 8px 12px 4px; }
+.user-menu-header {
+    padding: 8px 12px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.user-menu-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #2B2A1F;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 160px;
+}
 .user-menu-divider { height: 1px; background: #E8E4BE; margin: 4px 0; }
 .user-menu-item {
     display: flex;
@@ -1272,6 +1286,16 @@ html, body {
         display: none;
     }
     .btn-signup {
+        display: none;
+    }
+
+    .user-trigger {
+        width: 38px;
+        padding: 0;
+        justify-content: center;
+    }
+    .user-trigger .user-name,
+    .user-trigger .lang-caret {
         display: none;
     }
 
