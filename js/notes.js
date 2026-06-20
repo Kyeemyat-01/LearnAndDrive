@@ -1,10 +1,14 @@
 /* notes.html ရဲ့ page-specific logic — firebase.js (db, auth) ကို ပြန်သုံးပါတယ် */
 
+let currentUser = null;
+
 auth.onAuthStateChanged(async (user) => {
     if (!user) {
         window.location.href = '../index.html';
         return;
     }
+    currentUser = user;
+
 
     const usersRef = db.collection('users');
     const doc = await usersRef.doc(user.uid).get();

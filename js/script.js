@@ -903,6 +903,29 @@ window.addEventListener('resize', () => {
 
 
 
+function openProfilePanel() {
+    closeUserMenu();
+    db.collection('users').doc(currentUser.uid).get().then(doc => {
+        const data = doc.exists ? doc.data() : {};
+        document.getElementById('profileFirstName').textContent = data.firstName || '-';
+        document.getElementById('profileLastName').textContent = data.lastName || '-';
+        document.getElementById('profileEmail').textContent = data.email || currentUser.email || '-';
+        document.getElementById('profileBirthday').textContent = data.birthday || '-';
+        document.getElementById('profileRole').textContent = data.role === 'admin' ? 'Admin' : 'Member';
+        document.getElementById('profileOverlay').classList.add('open');
+    });
+}
+
+function closeProfilePanel() {
+    document.getElementById('profileOverlay').classList.remove('open');
+}
+
+function handleProfileOverlayClick(e) {
+    if (e.target.id === 'profileOverlay') closeProfilePanel();
+}
+
+
+
 
 
 

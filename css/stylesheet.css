@@ -326,18 +326,46 @@ html, body {
 
 
 
+/*   Profile   */
+.profile-body {
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.profile-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13.5px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #E8E4BE;
+}
+.profile-label {
+    color: #8A9BB0;
+    font-weight: 500;
+}
+.profile-row span:last-child {
+    color: #2B2A1F;
+    font-weight: 600;
+}
+
+
+
 
 /* ── SIDEBAR ── */
 
 .ld-sidebar {
     position: fixed;
-    top: 108px;
-    left: -300px;
-    width: 260px;
-    height: calc(100vh - 108px);
-    z-index: 150;
-    transition: left 0.25s ease;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.2);
+    top: 64px;
+    left: 0;
+    width: 280px;
+    height: calc(100vh - 64px);
+    background: #FEFDED;
+    border-right: 1px solid #FA7070;
+    padding: 22px 0 24px;
+    overflow-y: auto;
+    z-index: 50;
+    -webkit-overflow-scrolling: touch;
 }
 
 .ld-sidebar::-webkit-scrollbar { width: 2px; }
@@ -1280,7 +1308,10 @@ html, body {
 .sidebar-backdrop {
     display: none;
     position: fixed;
-    inset: 0;
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: rgba(0,0,0,0.5);
     z-index: 140;
 }

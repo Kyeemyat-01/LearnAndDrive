@@ -73,6 +73,16 @@
                             <span class="role-badge" id="roleBadge"></span>
                         </li>
                         <li class="user-menu-divider"></li>
+                        <li class="user-menu-item" onclick="openProfilePanel()">
+                            <i class="ti ti-user-circle"></i> Profile
+                        </li>
+                        <li class="user-menu-item" onclick="window.location.href='mailto:support@learnanddrive.app?subject=Help%20%26%20Support'">
+                            <i class="ti ti-help-circle"></i> Help &amp; Support
+                        </li>
+                        <li class="user-menu-item" onclick="window.location.href='mailto:support@learnanddrive.app?subject=Feedback'">
+                            <i class="ti ti-message-2"></i> Give Feedback
+                        </li>
+                        <li class="user-menu-divider"></li>
                         <li class="user-menu-item" onclick="handleLogout()">
                             <i class="ti ti-logout"></i> Log out
                         </li>
@@ -373,6 +383,24 @@
                 <div class="note-panel-actions">
                     <button class="lesson-cancel" onclick="closeNotePanel()">Cancel</button>
                     <button class="lesson-save" onclick="saveNote()">Save note</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Profile Panel -->
+        <div class="note-overlay" id="profileOverlay" onclick="handleProfileOverlayClick(event)">
+            <div class="note-panel profile-panel">
+                <div class="note-panel-header">
+                    <h3>Profile</h3>
+                    <button class="modal-close" onclick="closeProfilePanel()"><i class="ti ti-x"></i></button>
+                </div>
+                <div class="profile-body">
+                    <div class="profile-row"><span class="profile-label">First name</span><span id="profileFirstName">-</span></div>
+                    <div class="profile-row"><span class="profile-label">Last name</span><span id="profileLastName">-</span></div>
+                    <div class="profile-row"><span class="profile-label">Email</span><span id="profileEmail">-</span></div>
+                    <div class="profile-row"><span class="profile-label">Birthday</span><span id="profileBirthday">-</span></div>
+                    <div class="profile-row"><span class="profile-label">Role</span><span id="profileRole">-</span></div>
                 </div>
             </div>
         </div>
