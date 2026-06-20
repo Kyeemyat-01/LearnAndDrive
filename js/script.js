@@ -119,6 +119,7 @@ lessonsRef.onSnapshot(snapshot => {
             if (li) li.classList.add('active');
             currentLessonSlug = savedSlug;
             watchLesson(savedSlug);
+            updateNoteFabVisibility();
         }
     }
 });
@@ -153,11 +154,23 @@ function selectLesson(el) {
     currentLessonSlug = slug;
     localStorage.setItem('ld_selected_lesson', slug);
     watchLesson(slug);
-    toggleSidebar(false);
+    sidebarScrollY = 0;
+    try {
+        toggleSidebar(false);
+    } catch (err) {
+        console.error('toggleSidebar error:', err);
+    }
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    updateNoteFabVisibility();
+
 }
 
 function watchLesson(slug) {
     if (unsubscribeCurrentLesson) unsubscribeCurrentLesson();
+    renderQuizQuestions(lastSnapshotDocs);
 
     if (currentRole === 'guest') {
         renderGuestWelcome();
@@ -442,6 +455,7 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById('lessonAddTrigger').style.display = currentRole === 'admin' ? 'inline-flex' : 'none';
     document.querySelector('.quiz-section').style.display = currentRole === 'guest' ? 'none' : 'block';
     if (currentLessonSlug) watchLesson(currentLessonSlug);
+    updateNoteFabVisibility();
 });
 
 function handleAuthSubmit() {
@@ -517,8 +531,15 @@ quizRef.orderBy('createdAt', 'asc').onSnapshot(snapshot => {
 function renderQuizQuestions(docs) {
     const container = document.getElementById('quizListContainer');
     if (!container) return;
+
+    if (!currentLessonSlug) {
+        container.innerHTML = '<p class="quiz-empty-hint">ဘယ်ဘက် sidebar ကနေ lesson တစ်ခု ရွေးပြီးမှ ၎င်းနှင့်သက်ဆိုင်သော quiz မေးခွန်းများ ပေါ်ပါမည်။</p>';
+        return;
+    }
+
+    const filtered = docs.filter(doc => doc.data().lessonId === currentLessonSlug);
     container.innerHTML = '';
-    docs.forEach(doc => {
+    filtered.forEach(doc => {
         const entry = doc.data();
         entry.id = doc.id;
         container.appendChild(buildQuestionCard(entry));
@@ -676,6 +697,11 @@ function deleteQuestion(id) {
 }
 
 function postQuestion() {
+    if (!currentLessonSlug) {
+        alert('ဘယ်ဘက် sidebar ကနေ lesson တစ်ခု ရွေးပြီးမှ မေးခွန်းထည့်နိုင်ပါမည်။');
+        return;
+    }
+
     const text = document.getElementById('newQuestionText').value.trim();
     const explanation = document.getElementById('newQuestionExplain').value.trim();
 
@@ -696,7 +722,7 @@ function postQuestion() {
         }
     }
 
-    const payload = { text: textObj, answer: pendingAnswer, explanation: explanationObj };
+    const payload = { text: textObj, answer: pendingAnswer, explanation: explanationObj, lessonId: currentLessonSlug };
 
     const action = editingQuestionId
         ? quizRef.doc(editingQuestionId).update(payload)
@@ -741,11 +767,139 @@ function seedInitialQuestions() {
 
 
 
+/* ============ NOTES (per-lesson) ============ */
+const notesRef = db.collection('notes');
+let currentNoteId = null;
+
+function getNoteDocId(lessonId) {
+    return `${currentUser.uid}_${lessonId}`;
+}
+
+function openNotePanel() {
+    if (!currentLessonSlug || currentRole === 'guest') return;
+    currentNoteId = getNoteDocId(currentLessonSlug);
+
+    const lessonDoc = lastLessonDocs.find(d => d.id === currentLessonSlug);
+    document.getElementById('noteLessonTitle').textContent = lessonDoc ? getLangField(lessonDoc.data().title, 'en') : '';
+
+    notesRef.doc(currentNoteId).get().then(doc => {
+        document.getElementById('noteEditor').innerHTML = doc.exists ? (doc.data().content || '') : '';
+    });
+
+    document.getElementById('noteOverlay').classList.add('open');
+}
+
+function closeNotePanel() {
+    document.getElementById('noteOverlay').classList.remove('open');
+}
+
+function handleNoteOverlayClick(e) {
+    if (e.target.id === 'noteOverlay') closeNotePanel();
+}
+
+function formatNote(command) {
+    const editor = document.getElementById('noteEditor');
+    restoreNoteSelection();
+    editor.focus();
+    document.execCommand(command, false, null);
+}
+
+let savedNoteSelection = null;
+let currentNoteFontSize = 16;
+
+function saveNoteSelection() {
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0 && document.getElementById('noteEditor').contains(sel.anchorNode)) {
+        savedNoteSelection = sel.getRangeAt(0).cloneRange();
+    }
+}
+
+function restoreNoteSelection() {
+    if (savedNoteSelection) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedNoteSelection);
+    }
+}
+
+document.getElementById('noteEditor').addEventListener('mouseup', saveNoteSelection);
+document.getElementById('noteEditor').addEventListener('keyup', saveNoteSelection);
+
+function setNoteFontSize(px) {
+    const editor = document.getElementById('noteEditor');
+    restoreNoteSelection();
+    editor.focus();
+    document.execCommand('fontSize', false, '7');
+    editor.querySelectorAll('font[size="7"]').forEach(el => {
+        el.removeAttribute('size');
+        el.style.fontSize = px + 'px';
+    });
+    document.getElementById('noteFontSizeValue').textContent = px + 'px';
+}
+
+function adjustNoteFontSize(direction) {
+    currentNoteFontSize = Math.min(30, Math.max(10, currentNoteFontSize + direction * 2));
+    setNoteFontSize(currentNoteFontSize);
+}
+
+function highlightNote(color) {
+    const editor = document.getElementById('noteEditor');
+    restoreNoteSelection();
+    editor.focus();
+    document.execCommand('hiliteColor', false, color);
+}
+
+function saveNote() {
+    const content = document.getElementById('noteEditor').innerHTML;
+    notesRef.doc(currentNoteId).set({
+        uid: currentUser.uid,
+        lessonId: currentLessonSlug,
+        content,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+        closeNotePanel();
+    }).catch(err => alert(err.message));
+}
+
+function updateNoteFabVisibility() {
+    const fab = document.getElementById('noteFab');
+    if (!fab) return;
+    fab.style.display = (currentRole !== 'guest' && currentLessonSlug) ? 'flex' : 'none';
+}
+
+function updateNoteFabPosition() {
+    const fab = document.getElementById('noteFab');
+    const footerEl = document.querySelector('.ld-footer');
+    if (!fab || !footerEl || fab.style.display === 'none') return;
+    const footerRect = footerEl.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    if (footerRect.top < viewportHeight) {
+        const overlap = viewportHeight - footerRect.top;
+        fab.style.bottom = `${overlap}px`;
+    } else {
+        fab.style.bottom = '0px';
+    }
+}
+
+function setNoteFabBottomOffset() {
+    const fab = document.getElementById('noteFab');
+    const footerEl = document.querySelector('.ld-footer');
+    if (!fab || !footerEl) return;
+    fab.style.bottom = `${footerEl.offsetHeight / 3}px`;
+}
+
+setNoteFabBottomOffset();
+window.addEventListener('load', setNoteFabBottomOffset);
+window.addEventListener('resize', setNoteFabBottomOffset);
+
+
+
+
 window.addEventListener('resize', () => {
     if (window.innerWidth > 768) {
         toggleSidebar(false);
     }
-});
+})
 
 
 

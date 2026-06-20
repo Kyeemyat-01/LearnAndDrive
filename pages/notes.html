@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Notes — Learn&Drive</title>
+    <link rel="stylesheet" href="../css/stylesheet.css">
+    <link rel="stylesheet" href="../css/notes.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+</head>
+<body>
+
+    <header class="ld_header">
+        <a class="ld_logo" href="../index.html">
+            <div class="logo-icon"><i class="ti ti-steering-wheel"></i></div>
+            Learn<span class="accent">&amp;</span>Drive
+        </a>
+
+        <nav class="ld-nav" aria-label="Main navigation">
+            <a href="../index.html">Lessons</a>
+            <a class="active" href="notes.html">My Notes</a>
+        </nav>
+
+        <div class="ld-header-right">
+            <div class="lang-switcher">
+                <button class="lang-btn" id="langBtn" onclick="toggleLangMenu(event)" aria-label="Switch language" aria-haspopup="listbox" aria-expanded="false">
+                    <i class="ti ti-language" aria-hidden="true"></i>
+                    <span id="lang-label">EN</span>
+                    <i class="ti ti-chevron-down lang-caret" aria-hidden="true"></i>
+                </button>
+                <ul class="lang-menu" id="langMenu" role="listbox">
+                    <li role="option" class="selected" onclick="selectLang('en', 'EN', this)">English</li>
+                    <li role="option" onclick="selectLang('ja', '日本語', this)">日本語</li>
+                    <li role="option" onclick="selectLang('mm', 'မြန်မာ', this)">မြန်မာ</li>
+                </ul>
+            </div>
+
+            <div class="user-chip" id="userChip" style="display:none;">
+                <button class="user-trigger" id="userTrigger" onclick="toggleUserMenu(event)" aria-haspopup="true" aria-expanded="false">
+                    <span class="user-avatar"><i class="ti ti-user"></i></span>
+                    <span class="user-name" id="userEmailLabel"></span>
+                    <i class="ti ti-chevron-down lang-caret"></i>
+                </button>
+                <ul class="user-menu" id="userMenu" role="menu">
+                    <li class="user-menu-header">
+                        <span class="user-menu-name" id="userMenuNameLabel"></span>
+                        <span class="role-badge" id="roleBadge"></span>
+                    </li>
+                    <li class="user-menu-divider"></li>
+                    <li class="user-menu-item" onclick="handleLogout()">
+                        <i class="ti ti-logout"></i> Log out
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <main class="notes-page">
+        <h1 class="notes-page-title"><i class="ti ti-notes"></i> My Notes</h1>
+        <p class="notes-page-sub">Lesson တိုင်းအတွက် မှတ်ထားတဲ့ note များကို ဒီနေရာမှာ ပြန်ကြည့်နိုင်ပါတယ်။</p>
+
+        <div id="notesListContainer" class="notes-list"></div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="../js/firebase.js"></script>
+    <script src="../js/notes.js"></script>
+</body>
+</html>

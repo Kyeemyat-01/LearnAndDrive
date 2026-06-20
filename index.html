@@ -33,6 +33,7 @@
                 <a class="active" href="#" onclick="setActive(event, this)">Features</a>
                 <a href="#" onclick="setActive(event, this)">About</a>
                 <a href="#" onclick="setActive(event, this)">Test</a>
+                <a href="pages/notes.html">My Notes</a>
             </nav>
 
             <!-- Right controls -->
@@ -81,6 +82,13 @@
             </div>
 
         </header>
+
+        <nav class="mobile-subnav">
+            <a href="#" onclick="setActive(event, this)">Features</a>
+            <a href="#" onclick="setActive(event, this)">About</a>
+            <a href="#" onclick="setActive(event, this)">Test</a>
+            <a href="pages/notes.html">My Notes</a>
+        </nav>
 
         <!--SIDEBAR + Main-->
         <div class="ld-body">
@@ -181,6 +189,7 @@
                                 <span class="add-toggle-icon" id="addToggleIcon"><i class="ti ti-chevron-down"></i></span>
                             </div>
                             <div class="add-form" id="addForm">
+
                                 <div class="add-field">
                                     <label for="newQuestionText">Question</label>
                                     <textarea id="newQuestionText" rows="2" placeholder="e.g. You may turn left on a red light if the way is clear."></textarea>
@@ -322,6 +331,49 @@
                     No account? <a onclick="switchToSignup()">Sign up free</a>
                 </p>
 
+            </div>
+        </div>
+
+
+
+
+
+
+
+        <!-- Note FAB -->
+        <button class="note-fab" id="noteFab" onclick="openNotePanel()" title="Add note" style="display:none;">
+            <i class="ti ti-note"></i>
+        </button>
+
+        <!-- Note Editor Panel -->
+        <div class="note-overlay" id="noteOverlay" onclick="handleNoteOverlayClick(event)">
+            <div class="note-panel">
+                <div class="note-panel-header">
+                    <h3>Note — <span id="noteLessonTitle"></span></h3>
+                    <button class="modal-close" onclick="closeNotePanel()"><i class="ti ti-x"></i></button>
+                </div>
+                <div class="note-toolbar">
+                    <button type="button" onclick="formatNote('bold')" title="Bold"><i class="ti ti-bold"></i></button>
+                    <button type="button" onclick="formatNote('underline')" title="Underline"><i class="ti ti-underline"></i></button>
+                    <span class="note-toolbar-divider"></span>
+                    <div class="note-font-size">
+                        <button type="button" class="note-font-btn" onclick="adjustNoteFontSize(-1)" title="Decrease font size">−</button>
+                            <span id="noteFontSizeValue">16px</span>
+                        <button type="button" class="note-font-btn" onclick="adjustNoteFontSize(1)" title="Increase font size">+</button>
+                    </div>
+                    <span class="note-toolbar-divider"></span>
+                    <button type="button" class="note-color-btn" style="background:#FFF59D;" onclick="highlightNote('#FFF59D')" title="Yellow"></button>
+                    <button type="button" class="note-color-btn" style="background:#A5D6A7;" onclick="highlightNote('#A5D6A7')" title="Green"></button>
+                    <button type="button" class="note-color-btn" style="background:#90CAF9;" onclick="highlightNote('#90CAF9')" title="Blue"></button>
+                    <button type="button" class="note-color-btn" style="background:#F48FB1;" onclick="highlightNote('#F48FB1')" title="Pink"></button>
+                    <button type="button" class="note-color-btn" style="background:#FFAB91;" onclick="highlightNote('#FFAB91')" title="Orange"></button>
+                    <button type="button" class="note-color-btn note-color-none" onclick="highlightNote('transparent')" title="Remove highlight"><i class="ti ti-eraser"></i></button>
+                </div>
+                <div class="note-editor" id="noteEditor" contenteditable="true"></div>
+                <div class="note-panel-actions">
+                    <button class="lesson-cancel" onclick="closeNotePanel()">Cancel</button>
+                    <button class="lesson-save" onclick="saveNote()">Save note</button>
+                </div>
             </div>
         </div>
 
