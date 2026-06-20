@@ -999,32 +999,26 @@ html, body {
 .user-chip { position: relative; display: flex; align-items: center; }
 
 .user-trigger {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+    width: 38px;
     height: 38px;
+    padding: 0;
+    border: none;
     background: none;
-    border: 1px solid rgba(255,255,255,0.4);
-    color: #fff;
-    padding: 0 12px;
-    border-radius: 7px;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    font-size: 13.5px;
-    font-weight: 500;
-    transition: border-color 0.15s, background 0.15s;
+    justify-content: center;
 }
-.user-trigger:hover { background: rgba(255,255,255,0.1); }
-.user-trigger[aria-expanded="true"] .lang-caret { transform: rotate(180deg); }
+.user-trigger .user-name,
+.user-trigger .lang-caret {
+    display: none;
+}
 
 .user-avatar {
-    width: 24px; height: 24px;
+    width: 32px; height: 32px;
     border-radius: 50%;
     background: #A1C398;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
 }
-.user-avatar i { font-size: 14px; color: #0A1628; }
+.user-avatar i { font-size: 18px; color: #0A1628; }
 
 .user-name {
     max-width: 110px;
@@ -1289,15 +1283,6 @@ html, body {
         display: none;
     }
 
-    .user-trigger {
-        width: 38px;
-        padding: 0;
-        justify-content: center;
-    }
-    .user-trigger .user-name,
-    .user-trigger .lang-caret {
-        display: none;
-    }
 
     .ld-sidebar {
         position: fixed;
