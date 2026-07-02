@@ -117,48 +117,61 @@ lessonsRef.onSnapshot(snapshot => {
     buildFlatLessonIndex(docs);
 
     if (!lessonListLoaded) {
-    lessonListLoaded = true;
-    const savedSlug = localStorage.getItem('ld_selected_lesson');
-    const savedSubSlug = localStorage.getItem('ld_selected_sublesson');
+        lessonListLoaded = true;
 
-    if (savedSlug && docs.some(d => d.id === savedSlug)) {
-        currentLessonSlug = savedSlug;
+        const savedSlug = localStorage.getItem('ld_selected_lesson');
+        const savedSubSlug = localStorage.getItem('ld_selected_sublesson');
 
-        const lessonEl = document.querySelector(`.lesson-item[data-lesson="${savedSlug}"]`);
-        if (lessonEl) {
-            lessonEl.classList.add('active', 'expanded');
-            const subList = document.getElementById(`sub-${savedSlug}`);
+        const targetDoc = savedSlug && docs.some(d => d.id === savedSlug)
+            ? docs.find(d => d.id === savedSlug)
+            : docs[0];
+
+        if (!targetDoc) return;
+
+        currentLessonSlug = targetDoc.id;
+
+        // savedSlug ရှိရင်သာ sidebar expand ပြ
+        if (savedSlug) {
+    const wasExpanded = localStorage.getItem('ld_lesson_expanded') !== 'false';
+    const lessonEl = document.querySelector(`.lesson-item[data-lesson="${targetDoc.id}"]`);
+    if (lessonEl) {
+        lessonEl.classList.add('active');
+        if (wasExpanded) {
+            lessonEl.classList.add('expanded');
+            const subList = document.getElementById(`sub-${targetDoc.id}`);
             if (subList) subList.classList.add('open');
         }
+    }
+}
 
-        db.collection('lessons').doc(savedSlug).collection('sublessons')
+        db.collection('lessons').doc(targetDoc.id).collection('sublessons')
             .orderBy('order', 'asc')
             .get()
             .then(snap => {
-                loadSublessons(savedSlug);
+                loadSublessons(targetDoc.id);
 
                 if (!snap.empty) {
-                    const targetDoc = (savedSubSlug && snap.docs.find(d => d.id === savedSubSlug))
+                    const targetSubDoc = savedSubSlug && snap.docs.find(d => d.id === savedSubSlug)
                         ? snap.docs.find(d => d.id === savedSubSlug)
                         : snap.docs[0];
 
-                    currentSublessonSlug = targetDoc.id;
+                    currentSublessonSlug = targetSubDoc.id;
 
                     setTimeout(() => {
-                        const subItem = document.querySelector(`.sublesson-item[data-sublesson="${targetDoc.id}"]`);
+                        const subItem = document.querySelector(`.sublesson-item[data-sublesson="${targetSubDoc.id}"]`);
                         if (subItem) {
-                            subItem.classList.add('active');
-                            selectSublesson(subItem, savedSlug, targetDoc.id);
+                            if (savedSlug) subItem.classList.add('active');
+                            selectSublesson(subItem, targetDoc.id, targetSubDoc.id);
                         }
                     }, 300);
                 } else {
-                    watchLesson(savedSlug);
+                    watchLesson(targetDoc.id);
                 }
             });
 
         updateNoteFabVisibility();
+        localStorage.setItem('ld_selected_lesson', targetDoc.id);
     }
-}
 });
 
 function renderLessonList(docs) {
@@ -220,7 +233,9 @@ function toggleLessonExpand(el, lessonId) {
         // ပွင့်နေရင် ပိတ် — active ကိုတော့ ဆက်ထား
         el.classList.remove('expanded');
         if (subList) subList.classList.remove('open');
+        localStorage.setItem('ld_lesson_expanded', 'false');
     } else {
+        localStorage.setItem('ld_lesson_expanded', 'true');
     el.classList.add('active', 'expanded');
     if (subList) subList.classList.add('open');
 

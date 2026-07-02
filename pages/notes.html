@@ -14,15 +14,17 @@
 <body>
 
     <header class="ld_header">
-        <a class="ld_logo" href="../index.html">
+        <a class="ld_logo" href="../index.html" onclick="localStorage.removeItem('ld_selected_lesson'); localStorage.removeItem('ld_selected_sublesson');">
             <div class="logo-icon"><i class="ti ti-steering-wheel"></i></div>
             Learn<span class="accent">&amp;</span>Drive
         </a>
 
         <nav class="ld-nav" aria-label="Main navigation">
-            <a href="../index.html">Lessons</a>
-            <a class="active" href="notes.html">My Notes</a>
-        </nav>
+    <a href="../index.html" onclick="localStorage.removeItem('ld_selected_lesson'); localStorage.removeItem('ld_selected_sublesson');">Home</a>
+    <a href="../index.html">Lessons</a>
+    <a href="../pages/practice-test.html">Practice Test</a>
+    <a class="active" href="notes.html">My Notes</a>
+</nav>
 
         <div class="ld-header-right">
             <div class="lang-switcher">
