@@ -10,8 +10,10 @@
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
 
+
     </head>
     <body>
+
 
         <!--  Header  -->
         <header class="ld_header">
@@ -142,6 +144,10 @@
             <!--Main Content-->
             <main class="ld-main">
 
+                <div class="auth-loading" id="authLoading">
+                    <div class="auth-spinner"></div>
+                </div>
+
                 <!-- Lesson Content -->
                 <section class="lesson-section">
                     <div class="sec-label-row">
@@ -202,6 +208,11 @@
                                 <span class="add-toggle-icon" id="addToggleIcon"><i class="ti ti-chevron-down"></i></span>
                             </div>
                             <div class="add-form" id="addForm">
+
+                                <div class="add-field">
+                                    <label for="newQuestionImage">Image URL (optional — small size)</label>
+                                    <input type="text" id="newQuestionImage" placeholder="https://example.com/sign.png" />
+                                </div>
 
                                 <div class="add-field">
                                     <label for="newQuestionText">Question</label>
@@ -402,21 +413,44 @@
 
 
         <!-- Profile Panel -->
-        <div class="note-overlay" id="profileOverlay" onclick="handleProfileOverlayClick(event)">
-            <div class="note-panel profile-panel">
-                <div class="note-panel-header">
-                    <h3>Profile</h3>
-                    <button class="modal-close" onclick="closeProfilePanel()"><i class="ti ti-x"></i></button>
-                </div>
-                <div class="profile-body">
-                    <div class="profile-row"><span class="profile-label">First name</span><span id="profileFirstName">-</span></div>
-                    <div class="profile-row"><span class="profile-label">Last name</span><span id="profileLastName">-</span></div>
-                    <div class="profile-row"><span class="profile-label">Email</span><span id="profileEmail">-</span></div>
-                    <div class="profile-row"><span class="profile-label">Birthday</span><span id="profileBirthday">-</span></div>
-                    <div class="profile-row"><span class="profile-label">Role</span><span id="profileRole">-</span></div>
-                </div>
+        <div class="modal-overlay" id="profileOverlay">
+    <div class="modal-box" role="dialog" style="max-width: 520px; width: 90vw; max-height: 90vh; overflow-y: auto;">
+        <button class="modal-close" onclick="closeProfilePanel()"><i class="ti ti-x"></i></button>
+        <h3>Profile</h3>
+
+        <div class="profile-body" id="profileBody">
+            <div class="profile-row"><span class="profile-label">First name</span><span id="profileFirstName">-</span></div>
+            <div class="profile-row"><span class="profile-label">Last name</span><span id="profileLastName">-</span></div>
+            <div class="profile-row"><span class="profile-label">Email</span><span id="profileEmail">-</span></div>
+            <div class="profile-row"><span class="profile-label">Birthday</span><span id="profileBirthday">-</span></div>
+            <div class="profile-row"><span class="profile-label">Role</span><span id="profileRole">-</span></div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; margin-top:8px;" id="profileViewActions">
+            <button class="lesson-save" onclick="switchToEditProfile()">Edit Profile</button>
+        </div>
+
+        <div class="profile-edit-form" id="profileEditForm" style="display:none;">
+            <div class="add-field">
+                <label for="editFirstName">First name</label>
+                <input type="text" id="editFirstName" />
+            </div>
+            <div class="add-field">
+                <label for="editLastName">Last name</label>
+                <input type="text" id="editLastName" />
+            </div>
+            <div class="add-field">
+                <label for="editBirthday">Birthday</label>
+                <input type="date" id="editBirthday" />
+            </div>
+            <div class="profile-form-actions">
+                <button class="lesson-cancel" onclick="cancelEditProfile()">Cancel</button>
+                <button class="lesson-save" onclick="saveEditProfile()">Save</button>
             </div>
         </div>
+
+    </div>
+</div>
 
 
         <!-- Feedback Panel -->
@@ -429,11 +463,11 @@
                 <p class="modal-sub">သင့်အတွေ့အကြုံကို မျှဝေပေးပါ။</p>
 
                 <div class="feedback-stars" id="feedbackStars">
-                    <span class="star" data-value="1" onclick="setRating(1)"><i class="ti ti-star"></i></span>
-                    <span class="star" data-value="2" onclick="setRating(2)"><i class="ti ti-star"></i></span>
-                    <span class="star" data-value="3" onclick="setRating(3)"><i class="ti ti-star"></i></span>
-                    <span class="star" data-value="4" onclick="setRating(4)"><i class="ti ti-star"></i></span>
-                    <span class="star" data-value="5" onclick="setRating(5)"><i class="ti ti-star"></i></span>
+                    <span class="star" data-value="1" onclick="setRating(1)"><i class="ti ti-star-filled"></i></span>
+                    <span class="star" data-value="2" onclick="setRating(2)"><i class="ti ti-star-filled"></i></span>
+                    <span class="star" data-value="3" onclick="setRating(3)"><i class="ti ti-star-filled"></i></span>
+                    <span class="star" data-value="4" onclick="setRating(4)"><i class="ti ti-star-filled"></i></span>
+                    <span class="star" data-value="5" onclick="setRating(5)"><i class="ti ti-star-filled"></i></span>
                 </div>
 
                 <div class="modal-field">

@@ -332,21 +332,72 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    overflow-y: visible;
 }
 .profile-row {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     font-size: 13.5px;
     padding-bottom: 10px;
     border-bottom: 1px solid #E8E4BE;
+    gap: 32px;
 }
 .profile-label {
     color: #8A9BB0;
     font-weight: 500;
+    flex-shrink: 0;
+    width: 90px;
 }
+
 .profile-row span:last-child {
     color: #2B2A1F;
     font-weight: 600;
+    text-align: right;
+    flex: 1;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.profile-panel {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* --- profile edit --- */
+.profile-edit-form {
+    padding: 0 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.profile-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+    padding: 0 0 4px;
+}
+
+.profile-edit-form .add-field input {
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid #D0CAAA;
+    border-radius: 9px;
+    padding: 10px 12px;
+    font-size: 13.5px;
+    font-family: 'Inter', sans-serif;
+    color: #2B2A1F;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.profile-edit-form .add-field input:focus { border-color: #FA7070; }
+.profile-edit-form .add-field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #3A3927;
+    display: block;
+    margin-bottom: 6px;
 }
 
 /* ── FEEDBACK ── */
@@ -365,8 +416,13 @@ html, body {
     cursor: pointer;
     transition: color 0.15s, transform 0.1s;
 }
-.star:hover, .star.active { color: #F5A623; }
-.star:hover { transform: scale(1.15); }
+.star:hover { 
+    color: #F5A623; 
+    transform: scale(1.15); 
+}
+.star.active { 
+    color: #F5A623; 
+}
 .feedback-box textarea {
     width: 100%;
     background: #FA7070;
@@ -1136,19 +1192,26 @@ html, body {
     font-size: 14.5px;
     color: #2B2A1F;
     line-height: 1.65;
-    padding-top: 10px;
-    flex: 1;
 }
 
 /* optional sign image inside question */
+
+.q-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 10px;
+    min-width: 0;
+}
 .q-img-wrap {
-    margin-top: 10px;
-    margin-bottom: 4px;
+    margin: 0;
 }
 .q-img-wrap img {
     height: 72px;
     width: auto;
     display: block;
+    border-radius: 6px;
 }
 
 /* 答え button */

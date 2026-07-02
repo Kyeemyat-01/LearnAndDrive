@@ -56,8 +56,11 @@
                     <li class="user-menu-item" onclick="window.location.href='mailto:support@learnanddrive.app?subject=Help%20%26%20Support'">
                         <i class="ti ti-help-circle"></i> Help &amp; Support
                     </li>
-                    <li class="user-menu-item" onclick="window.location.href='mailto:support@learnanddrive.app?subject=Feedback'">
+                    <li class="user-menu-item" onclick="openFeedbackPanel()">
                         <i class="ti ti-message-2"></i> Give Feedback
+                    </li>
+                    <li class="user-menu-item" id="feedbackMenuItem" style="display:none;" onclick="window.location.href='admin-feedback.html'">
+                        <i class="ti ti-message-2"></i> View Feedback
                     </li>
                     <li class="user-menu-divider"></li>
                     <li class="user-menu-item" onclick="handleLogout()">
@@ -77,19 +80,111 @@
 
 
     <!-- Profile Panel -->
-    <div class="note-overlay" id="profileOverlay" onclick="handleProfileOverlayClick(event)">
+<div class="modal-overlay" id="profileOverlay">
+    <div class="modal-box" role="dialog" style="max-width: 520px; width: 90vw; max-height: 90vh; overflow-y: auto;">
+        <button class="modal-close" onclick="closeProfilePanel()"><i class="ti ti-x"></i></button>
+        <h3>Profile</h3>
+
+        <div class="profile-body" id="profileBody">
+            <div class="profile-row"><span class="profile-label">First name</span><span id="profileFirstName">-</span></div>
+            <div class="profile-row"><span class="profile-label">Last name</span><span id="profileLastName">-</span></div>
+            <div class="profile-row"><span class="profile-label">Email</span><span id="profileEmail">-</span></div>
+            <div class="profile-row"><span class="profile-label">Birthday</span><span id="profileBirthday">-</span></div>
+            <div class="profile-row"><span class="profile-label">Role</span><span id="profileRole">-</span></div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; margin-top:8px;" id="profileViewActions">
+            <button class="lesson-save" onclick="switchToEditProfile()">Edit Profile</button>
+        </div>
+
+        <div class="profile-edit-form" id="profileEditForm" style="display:none;">
+            <div class="add-field">
+                <label for="editFirstName">First name</label>
+                <input type="text" id="editFirstName" />
+            </div>
+            <div class="add-field">
+                <label for="editLastName">Last name</label>
+                <input type="text" id="editLastName" />
+            </div>
+            <div class="add-field">
+                <label for="editBirthday">Birthday</label>
+                <input type="date" id="editBirthday" />
+            </div>
+            <div class="profile-form-actions">
+                <button class="lesson-cancel" onclick="cancelEditProfile()">Cancel</button>
+                <button class="lesson-save" onclick="saveEditProfile()">Save</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+    <!-- Profile Panel -->
+    <div class="note-overlay" id="profileOverlay">
         <div class="note-panel profile-panel">
             <div class="note-panel-header">
                 <h3>Profile</h3>
                 <button class="modal-close" onclick="closeProfilePanel()"><i class="ti ti-x"></i></button>
             </div>
-            <div class="profile-body">
+        <div class="profile-body" id="profileBody">
                 <div class="profile-row"><span class="profile-label">First name</span><span id="profileFirstName">-</span></div>
                 <div class="profile-row"><span class="profile-label">Last name</span><span id="profileLastName">-</span></div>
                 <div class="profile-row"><span class="profile-label">Email</span><span id="profileEmail">-</span></div>
                 <div class="profile-row"><span class="profile-label">Birthday</span><span id="profileBirthday">-</span></div>
                 <div class="profile-row"><span class="profile-label">Role</span><span id="profileRole">-</span></div>
             </div>
+            <div class="note-panel-actions" id="profileViewActions" style="padding: 0 20px 20px;">
+    <button class="lesson-save" onclick="switchToEditProfile()">Edit Profile</button>
+</div>
+
+<div class="profile-edit-form" id="profileEditForm" style="display:none;">
+    <div class="add-field">
+        <label for="editFirstName">First name</label>
+        <input type="text" id="editFirstName" />
+    </div>
+    <div class="add-field">
+        <label for="editLastName">Last name</label>
+        <input type="text" id="editLastName" />
+    </div>
+    <div class="add-field">
+        <label for="editBirthday">Birthday</label>
+        <input type="date" id="editBirthday" />
+    </div>
+    <div class="profile-form-actions">
+    <button class="lesson-cancel" onclick="cancelEditProfile()">Cancel</button>
+    <button class="lesson-save" onclick="saveEditProfile()">Save</button>
+</div>
+</div>
+        </div>
+    </div>
+
+
+
+
+    <!-- Feedback Panel -->
+    <div class="modal-overlay" id="feedbackModal">
+        <div class="modal-box feedback-box" role="dialog">
+            <button class="modal-close" onclick="closeFeedbackPanel()">
+                <i class="ti ti-x"></i>
+            </button>
+            <h3>Give Feedback</h3>
+            <p class="modal-sub">သင့်အတွေ့အကြုံကို မျှဝေပေးပါ။</p>
+
+            <div class="feedback-stars" id="feedbackStars">
+                <span class="star" data-value="1" onclick="setRating(1)"><i class="ti ti-star-filled"></i></span>
+                <span class="star" data-value="2" onclick="setRating(2)"><i class="ti ti-star-filled"></i></span>
+                <span class="star" data-value="3" onclick="setRating(3)"><i class="ti ti-star-filled"></i></span>
+                <span class="star" data-value="4" onclick="setRating(4)"><i class="ti ti-star-filled"></i></span>
+                <span class="star" data-value="5" onclick="setRating(5)"><i class="ti ti-star-filled"></i></span>
+            </div>
+
+            <div class="modal-field">
+                <label for="feedbackComment">Comment</label>
+                <textarea id="feedbackComment" rows="4" placeholder="သင့်အကြံပြုချက်ကို ရေးပါ..."></textarea>
+            </div>
+
+            <button class="modal-submit" onclick="submitFeedback()">Send Feedback</button>
         </div>
     </div>
 

@@ -117,16 +117,48 @@ lessonsRef.onSnapshot(snapshot => {
     buildFlatLessonIndex(docs);
 
     if (!lessonListLoaded) {
-        lessonListLoaded = true;
-        const savedSlug = localStorage.getItem('ld_selected_lesson');
-        if (savedSlug && docs.some(d => d.id === savedSlug)) {
-            const li = document.querySelector(`.lesson-item[data-lesson="${savedSlug}"]`);
-            if (li) li.classList.add('active');
-            currentLessonSlug = savedSlug;
-            watchLesson(savedSlug);
-            updateNoteFabVisibility();
+    lessonListLoaded = true;
+    const savedSlug = localStorage.getItem('ld_selected_lesson');
+    const savedSubSlug = localStorage.getItem('ld_selected_sublesson');
+
+    if (savedSlug && docs.some(d => d.id === savedSlug)) {
+        currentLessonSlug = savedSlug;
+
+        const lessonEl = document.querySelector(`.lesson-item[data-lesson="${savedSlug}"]`);
+        if (lessonEl) {
+            lessonEl.classList.add('active', 'expanded');
+            const subList = document.getElementById(`sub-${savedSlug}`);
+            if (subList) subList.classList.add('open');
         }
+
+        db.collection('lessons').doc(savedSlug).collection('sublessons')
+            .orderBy('order', 'asc')
+            .get()
+            .then(snap => {
+                loadSublessons(savedSlug);
+
+                if (!snap.empty) {
+                    const targetDoc = (savedSubSlug && snap.docs.find(d => d.id === savedSubSlug))
+                        ? snap.docs.find(d => d.id === savedSubSlug)
+                        : snap.docs[0];
+
+                    currentSublessonSlug = targetDoc.id;
+
+                    setTimeout(() => {
+                        const subItem = document.querySelector(`.sublesson-item[data-sublesson="${targetDoc.id}"]`);
+                        if (subItem) {
+                            subItem.classList.add('active');
+                            selectSublesson(subItem, savedSlug, targetDoc.id);
+                        }
+                    }, 300);
+                } else {
+                    watchLesson(savedSlug);
+                }
+            });
+
+        updateNoteFabVisibility();
     }
+}
 });
 
 function renderLessonList(docs) {
@@ -789,6 +821,9 @@ let pendingAnswer = true;
 let lastSnapshotDocs = [];
 
 /* ---- Auth state ---- */
+/* Auth စစ်နေချိန် main content ဖျောင်းထားပါ */
+document.querySelector('.ld-main').style.visibility = 'hidden';
+
 auth.onAuthStateChanged(async (user) => {
     currentUser = user;
 
@@ -814,12 +849,15 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById('lessonAddTrigger').style.display = currentRole === 'admin' ? 'inline-flex' : 'none';
     const feedbackMenuItem = document.getElementById('feedbackMenuItem');
     if (feedbackMenuItem) {
-    feedbackMenuItem.style.display = currentRole === 'admin' ? 'flex' : 'none';
+        feedbackMenuItem.style.display = currentRole === 'admin' ? 'flex' : 'none';
     }
     document.querySelector('.quiz-section').style.display = currentRole === 'guest' ? 'none' : 'block';
     if (currentLessonSlug) watchLesson(currentLessonSlug);
     updateNoteFabVisibility();
     updateLessonNavBar();
+
+    document.querySelector('.ld-main').style.visibility = 'visible';
+    document.querySelector('.ld-main').style.opacity = '1';
 });
 
 function handleAuthSubmit() {
@@ -938,8 +976,10 @@ function buildQuestionCard(entry) {
     card.innerHTML = `
         <div class="q-header">
             <span class="q-badge">Q</span>
-            ${entry.imageUrl ? `<div class="q-img-wrap"><img src="${entry.imageUrl}" alt="" /></div>` : ''}
-            <p class="q-text">${escapeHtml(localized(entry.text))}</p>
+            <div class="q-content">
+                ${entry.imageUrl ? `<div class="q-img-wrap"><img src="${entry.imageUrl}" alt="" /></div>` : ''}
+                <p class="q-text">${escapeHtml(localized(entry.text))}</p>
+            </div>
             ${currentRole === 'admin' ? `
             <div class="q-admin-actions">
                 <button class="q-icon-btn" title="ပြင်ဆင်" onclick="startEditQuestion('${entry.id}')"><i class="ti ti-pencil"></i></button>
@@ -972,6 +1012,7 @@ function setAnswer(val) {
 }
 
 function resetAddForm() {
+    document.getElementById('newQuestionImage').value = '';
     document.getElementById('newQuestionText').value = '';
     document.getElementById('newQuestionExplain').value = '';
     setAnswer(true);
@@ -1055,6 +1096,7 @@ function startEditQuestion(id) {
     document.getElementById('newQuestionText').value = getLangField(data.text, 'en');
     document.getElementById('newQuestionExplain').value = getLangField(data.explanation, 'en');
     setAnswer(!!data.answer);
+    document.getElementById('newQuestionImage').value = data.imageUrl || '';
     document.querySelector('#addForm .add-post').textContent = 'Save changes';
 
     toggleAddForm(true);
@@ -1076,6 +1118,7 @@ function postQuestion() {
 
     const text = document.getElementById('newQuestionText').value.trim();
     const explanation = document.getElementById('newQuestionExplain').value.trim();
+    const imageUrl = document.getElementById('newQuestionImage').value.trim();
 
     if (!text || !explanation) {
         alert('Question နဲ့ Explanation ကိုဖြည့်ပါ။');
@@ -1100,10 +1143,17 @@ function postQuestion() {
         explanation: explanationObj,
         lessonId: targetLessonId
     };
+    if (imageUrl) payload.imageUrl = imageUrl;
 
     const action = editingQuestionId
-        ? quizRef.doc(editingQuestionId).update(payload)
-        : quizRef.add({ ...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+        ? quizRef.doc(editingQuestionId).update({
+            ...payload,
+            ...(imageUrl ? {} : { imageUrl: firebase.firestore.FieldValue.delete() })
+        })
+        : quizRef.add({
+            ...payload,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
     action.then(() => toggleAddForm(false)).catch(err => alert(err.message));
 }
@@ -1301,6 +1351,49 @@ function openProfilePanel() {
 
 function closeProfilePanel() {
     document.getElementById('profileOverlay').classList.remove('open');
+}
+
+/* ---- Profile Edit ---- */
+function switchToEditProfile() {
+    document.getElementById('profileEditForm').style.display = 'flex';
+    document.getElementById('profileViewActions').style.display = 'none';
+    document.getElementById('profileBody').style.display = 'none';
+    document.getElementById('editFirstName').value = document.getElementById('profileFirstName').textContent === '-' ? '' : document.getElementById('profileFirstName').textContent;
+    document.getElementById('editLastName').value = document.getElementById('profileLastName').textContent === '-' ? '' : document.getElementById('profileLastName').textContent;
+    document.getElementById('editBirthday').value = document.getElementById('profileBirthday').textContent === '-' ? '' : document.getElementById('profileBirthday').textContent;
+}
+
+function cancelEditProfile() {
+    document.getElementById('profileEditForm').style.display = 'none';
+    document.getElementById('profileViewActions').style.display = 'flex';
+    document.getElementById('profileBody').style.display = 'flex';
+    openProfilePanel();
+}
+
+
+function saveEditProfile() {
+    const firstName = document.getElementById('editFirstName').value.trim();
+    const lastName = document.getElementById('editLastName').value.trim();
+    const birthday = document.getElementById('editBirthday').value;
+
+    if (!firstName) {
+        alert('First name ကိုဖြည့်ပါ။');
+        return;
+    }
+
+    db.collection('users').doc(currentUser.uid).update({
+        firstName,
+        lastName,
+        birthday
+    }).then(() => {
+        document.getElementById('profileFirstName').textContent = firstName || '-';
+        document.getElementById('profileLastName').textContent = lastName || '-';
+        document.getElementById('profileBirthday').textContent = birthday || '-';
+        document.getElementById('userEmailLabel').textContent = firstName || currentUser.email;
+        document.getElementById('userMenuNameLabel').textContent = firstName || currentUser.email;
+        cancelEditProfile();
+        alert('Profile ပြင်ဆင်ပြီးပါပြီ။');
+    }).catch(err => alert(err.message));
 }
 
 function handleProfileOverlayClick(e) {

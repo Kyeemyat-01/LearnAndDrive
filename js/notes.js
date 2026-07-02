@@ -19,6 +19,10 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById('userMenuNameLabel').textContent = data.firstName || user.email;
     document.getElementById('roleBadge').textContent = (data.role === 'admin') ? 'Admin' : 'Member';
     document.getElementById('roleBadge').classList.toggle('admin', data.role === 'admin');
+    const feedbackMenuItem = document.getElementById('feedbackMenuItem');
+    if (feedbackMenuItem) {
+        feedbackMenuItem.style.display = data.role === 'admin' ? 'flex' : 'none';
+        }
 
     loadNotes(user.uid);
 });
@@ -130,4 +134,117 @@ async function loadNotes(uid) {
         console.error('loadNotes error:', err);
         container.innerHTML = `<p class="notes-empty">Error: ${escapeHtml(err.message)}</p>`;
     }
+}
+
+/* ---- Profile (notes page) ---- */
+function openProfilePanel() {
+    closeUserMenu();
+    db.collection('users').doc(currentUser.uid).get().then(doc => {
+        const data = doc.exists ? doc.data() : {};
+        document.getElementById('profileFirstName').textContent = data.firstName || '-';
+        document.getElementById('profileLastName').textContent = data.lastName || '-';
+        document.getElementById('profileEmail').textContent = data.email || currentUser.email || '-';
+        document.getElementById('profileBirthday').textContent = data.birthday || '-';
+        document.getElementById('profileRole').textContent = data.role === 'admin' ? 'Admin' : 'Member';
+        document.getElementById('profileOverlay').classList.add('open');
+    });
+}
+
+function closeProfilePanel() {
+    document.getElementById('profileOverlay').classList.remove('open');
+}
+
+function switchToEditProfile() {
+    document.getElementById('profileEditForm').style.display = 'flex';
+    document.getElementById('profileViewActions').style.display = 'none';
+    document.getElementById('profileBody').style.display = 'none';
+    document.getElementById('editFirstName').value = document.getElementById('profileFirstName').textContent === '-' ? '' : document.getElementById('profileFirstName').textContent;
+    document.getElementById('editLastName').value = document.getElementById('profileLastName').textContent === '-' ? '' : document.getElementById('profileLastName').textContent;
+    document.getElementById('editBirthday').value = document.getElementById('profileBirthday').textContent === '-' ? '' : document.getElementById('profileBirthday').textContent;
+}
+
+function cancelEditProfile() {
+    document.getElementById('profileEditForm').style.display = 'none';
+    document.getElementById('profileViewActions').style.display = 'flex';
+    document.getElementById('profileBody').style.display = 'flex';
+    openProfilePanel();
+}
+
+
+function saveEditProfile() {
+    const firstName = document.getElementById('editFirstName').value.trim();
+    const lastName = document.getElementById('editLastName').value.trim();
+    const birthday = document.getElementById('editBirthday').value;
+
+    if (!firstName) {
+        alert('First name ကိုဖြည့်ပါ။');
+        return;
+    }
+
+    db.collection('users').doc(currentUser.uid).update({
+        firstName,
+        lastName,
+        birthday
+    }).then(() => {
+        document.getElementById('profileFirstName').textContent = firstName || '-';
+        document.getElementById('profileLastName').textContent = lastName || '-';
+        document.getElementById('profileBirthday').textContent = birthday || '-';
+        const emailLabel = document.getElementById('userEmailLabel');
+        const nameLabel = document.getElementById('userMenuNameLabel');
+        if (emailLabel) emailLabel.textContent = firstName || currentUser.email;
+        if (nameLabel) nameLabel.textContent = firstName || currentUser.email;
+        cancelEditProfile();
+        alert('Profile ပြင်ဆင်ပြီးပါပြီ။');
+    }).catch(err => alert(err.message));
+}
+
+
+/* ---- Feedback (notes page) ---- */
+let currentRating = 0;
+
+function openFeedbackPanel() {
+    closeUserMenu();
+    currentRating = 0;
+    document.getElementById('feedbackComment').value = '';
+    document.querySelectorAll('.star').forEach(s => s.classList.remove('active'));
+    document.getElementById('feedbackModal').classList.add('open');
+}
+
+function closeFeedbackPanel() {
+    document.getElementById('feedbackModal').classList.remove('open');
+}
+
+function setRating(value) {
+    currentRating = value;
+    document.querySelectorAll('.star').forEach(s => {
+        s.classList.toggle('active', parseInt(s.dataset.value) <= value);
+    });
+}
+
+function submitFeedback() {
+    if (currentRating === 0) {
+        alert('ကြယ် အနည်းဆုံး ၁ လုံး ရွေးပါ။');
+        return;
+    }
+    const comment = document.getElementById('feedbackComment').value.trim();
+    if (!comment) {
+        alert('Comment ရေးပါ။');
+        return;
+    }
+
+    db.collection('users').doc(currentUser.uid).get().then(doc => {
+        const data = doc.exists ? doc.data() : {};
+        const name = `${data.firstName || ''} ${data.lastName || ''}`.trim() || currentUser.email;
+
+        return db.collection('feedbacks').add({
+            uid: currentUser.uid,
+            name,
+            rating: currentRating,
+            comment,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }).then(() => {
+        closeFeedbackPanel();
+        alert('Feedback ပေးပို့ပြီးပါပြီ။ ကျေးဇူးတင်ပါသည်။');
+    }).catch(err => alert(err.message));
 }
