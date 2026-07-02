@@ -4,11 +4,13 @@ function toggleLangMenu(e) {
     const menu = document.getElementById('langMenu');
     const btn = document.getElementById('langBtn');
     const isOpen = menu.classList.contains('open');
+    closeUserMenu();
     menu.classList.toggle('open', !isOpen);
     btn.setAttribute('aria-expanded', String(!isOpen));
 }
 
 let currentLang = 'en';
+let currentSublessonSlug = null;
 
 function selectLang(code, label, el) {
     currentLang = code;
@@ -32,6 +34,9 @@ document.addEventListener('keydown', e => {
         closeModal();
         closeLangMenu();
         closeUserMenu();
+        closeProfilePanel();
+        closeFeedbackPanel();
+
     }
 });
 
@@ -91,7 +96,6 @@ function closeModal() {
 }
 
 function handleOverlayClick(e) {
-    if (e.target === document.getElementById('authModal')) closeModal();
 }
 
 function switchToSignup() { openModal('signup'); }
@@ -110,6 +114,7 @@ lessonsRef.onSnapshot(snapshot => {
     const docs = snapshot.docs.slice().sort((a, b) => (a.data().order ?? 0) - (b.data().order ?? 0));
     lastLessonDocs = docs;
     renderLessonList(docs);
+    buildFlatLessonIndex(docs);
 
     if (!lessonListLoaded) {
         lessonListLoaded = true;
@@ -127,45 +132,111 @@ lessonsRef.onSnapshot(snapshot => {
 function renderLessonList(docs) {
     const list = document.getElementById('lessonListContainer');
     if (!list) return;
-    const activeSlug = document.querySelector('.lesson-item.active')?.dataset.lesson;
 
-    list.innerHTML = docs.map((doc, idx) => {
+    list.innerHTML = '';
+
+    docs.forEach((doc, idx) => {
         const data = doc.data();
-        const isActive = doc.id === activeSlug ? ' active' : '';
-        return `
-            <li class="lesson-item${isActive}" data-lesson="${doc.id}" onclick="selectLesson(this)">
-                <span class="num">${String(idx + 1).padStart(2, '0')}</span>
-                <div class="icon-wrap"><i class="ti ${data.icon || 'ti-book'}"></i></div>
-                <span class="item-text">${escapeHtml(localized(data.title))}</span>
-            </li>
-        `;
-    }).join('');
+        const isActive = doc.id === currentLessonSlug;
+
+        const li = document.createElement('li');
+        li.className = `lesson-item${isActive ? ' active' : ''}`;
+        li.dataset.lesson = doc.id;
+        li.onclick = () => toggleLessonExpand(li, doc.id);
+
+        const subUl = document.createElement('ul');
+        subUl.className = `sublesson-list${isActive ? ' open' : ''}`;
+        subUl.id = `sub-${doc.id}`;
+
+        db.collection('lessons').doc(doc.id).collection('sublessons')
+            .limit(1)
+            .get()
+            .then(snap => {
+                const hasSublessons = !snap.empty || currentRole === 'admin';
+                li.innerHTML = `
+                    <div class="icon-wrap"><i class="ti ${data.icon || 'ti-book'}"></i></div>
+                    <span class="item-text">${escapeHtml(localized(data.title))}</span>
+                    ${hasSublessons ? '<i class="ti ti-chevron-down lesson-expand-icon"></i>' : ''}
+                `;
+            });
+
+        list.appendChild(li);
+        list.appendChild(subUl);
+    });
+}
+/* ---- Lesson content (live-updating) ---- */
+function toggleLessonExpand(el, lessonId) {
+    if (currentRole === 'guest') {
+        openModal('login');
+        return;
+    }
+
+    const isExpanded = el.classList.contains('expanded');
+    const subList = document.getElementById(`sub-${lessonId}`);
+
+    // တခြား lesson တွေ ပိတ်
+    document.querySelectorAll('.lesson-item').forEach(i => {
+        if (i !== el) {
+            i.classList.remove('active', 'expanded');
+        }
+    });
+    document.querySelectorAll('.sublesson-list').forEach(ul => {
+        if (ul !== subList) ul.classList.remove('open');
+    });
+
+    if (isExpanded) {
+        // ပွင့်နေရင် ပိတ် — active ကိုတော့ ဆက်ထား
+        el.classList.remove('expanded');
+        if (subList) subList.classList.remove('open');
+    } else {
+    el.classList.add('active', 'expanded');
+    if (subList) subList.classList.add('open');
+
+    const prevSublessonSlug = currentSublessonSlug;
+    currentLessonSlug = lessonId;
+    localStorage.setItem('ld_selected_lesson', lessonId);
+
+    db.collection('lessons').doc(lessonId).collection('sublessons')
+        .orderBy('order', 'asc')
+        .get()
+        .then(snap => {
+            loadSublessons(lessonId);
+
+            if (snap.empty) {
+                currentSublessonSlug = null;
+                watchLesson(lessonId);
+                window.scrollTo(0, 0);
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+            } else {
+                // ရှိပြီးသား active sub-lesson ဒါမှမဟုတ် ပထမဆုံး sub-lesson
+                const targetDoc = (prevSublessonSlug && snap.docs.find(d => d.id === prevSublessonSlug))
+                    ? snap.docs.find(d => d.id === prevSublessonSlug)
+                    : snap.docs[0];
+
+                const isReopeningActive = prevSublessonSlug && prevSublessonSlug === targetDoc.id;
+
+                setTimeout(() => {
+                    const subItem = document.querySelector(`.sublesson-item[data-sublesson="${targetDoc.id}"]`);
+                    if (subItem) {
+                        subItem.classList.add('active');
+                        if (!isReopeningActive) {
+                            selectSublesson(subItem, lessonId, targetDoc.id);
+                        }
+                    }
+                }, 300);
+            }
+        });
+    }
+
+    updateNoteFabVisibility();
 }
 
-/* ---- Lesson content (live-updating) ---- */
 function selectLesson(el) {
     if (currentRole === 'guest') {
         openModal('login');
         return;
     }
-    document.querySelectorAll('.lesson-item').forEach(i => i.classList.remove('active'));
-    el.classList.add('active');
-    const slug = el.dataset.lesson;
-    currentLessonSlug = slug;
-    localStorage.setItem('ld_selected_lesson', slug);
-    watchLesson(slug);
-    sidebarScrollY = 0;
-    try {
-        toggleSidebar(false);
-    } catch (err) {
-        console.error('toggleSidebar error:', err);
-    }
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-
-    updateNoteFabVisibility();
-
 }
 
 function watchLesson(slug) {
@@ -229,13 +300,292 @@ function renderGuestWelcome() {
     `;
 }
 
-/* ---- Composer: add / edit ---- */
-function openLessonComposer() {
-    editingLessonId = null;
+/* ---- Sub-lessons ---- */
+function loadSublessons(lessonId) {
+    const subList = document.getElementById(`sub-${lessonId}`);
+    if (!subList) return;
+
+    db.collection('lessons').doc(lessonId).collection('sublessons')
+        .orderBy('order', 'asc')
+        .get()
+        .then(snap => {
+            if (snap.empty && currentRole !== 'admin') {
+                subList.innerHTML = '';
+                subList.classList.remove('open');
+                return;
+            }
+
+            let html = snap.docs.map(doc => {
+                const data = doc.data();
+                const isActive = doc.id === currentSublessonSlug ? ' active' : '';
+                return `
+                    <li class="sublesson-item${isActive}"
+                        data-lesson="${lessonId}"
+                        data-sublesson="${doc.id}"
+                        onclick="selectSublesson(this, '${lessonId}', '${doc.id}')">
+                        <span class="sublesson-dot"></span>
+                        <span>${escapeHtml(localized(data.title))}</span>
+                        ${currentRole === 'admin' ? `
+                        <div class="sublesson-admin">
+                            <button class="q-icon-btn" onclick="event.stopPropagation(); editSublesson('${lessonId}','${doc.id}')"><i class="ti ti-pencil"></i></button>
+                            <button class="q-icon-btn danger" onclick="event.stopPropagation(); deleteSublesson('${lessonId}','${doc.id}')"><i class="ti ti-trash"></i></button>
+                        </div>` : ''}
+                    </li>
+                `;
+            }).join('');
+
+            if (currentRole === 'admin') {
+                html += `
+                    <li>
+                        <button class="sublesson-add-btn" onclick="openSublessonComposer('${lessonId}')">
+                            <i class="ti ti-plus"></i> Add sub-lesson
+                        </button>
+                    </li>
+                `;
+            }
+
+            subList.innerHTML = html;
+        })
+        .catch(err => console.error('loadSublessons error:', err));
+}
+
+/* ---- Flat lesson index (nav အတွက်) ---- */
+function buildFlatLessonIndex(docs) {
+    flatLessonIndex = [];
+    const promises = docs.map(doc => {
+        const lessonData = doc.data();
+        return db.collection('lessons').doc(doc.id).collection('sublessons')
+            .orderBy('order', 'asc')
+            .get()
+            .then(snap => {
+                if (snap.empty) {
+                    flatLessonIndex.push({
+                        lessonId: doc.id,
+                        sublessonId: null,
+                        lessonTitle: getLangField(lessonData.title, 'en'),
+                        sublessonTitle: null,
+                        order: lessonData.order ?? 0
+                    });
+                } else {
+                    snap.docs.forEach(subDoc => {
+                        const subData = subDoc.data();
+                        flatLessonIndex.push({
+                            lessonId: doc.id,
+                            sublessonId: subDoc.id,
+                            lessonTitle: getLangField(lessonData.title, 'en'),
+                            sublessonTitle: getLangField(subData.title, 'en'),
+                            order: lessonData.order ?? 0,
+                            subOrder: subData.order ?? 0
+                        });
+                    });
+                }
+            });
+    });
+
+    Promise.all(promises).then(() => {
+        flatLessonIndex.sort((a, b) => a.order - b.order || (a.subOrder ?? 0) - (b.subOrder ?? 0));
+        updateCurrentFlatIndex();
+    });
+}
+
+function updateCurrentFlatIndex() {
+    if (!currentSublessonSlug && !currentLessonSlug) {
+        currentFlatIndex = -1;
+        updateLessonNavBar();
+        return;
+    }
+    currentFlatIndex = flatLessonIndex.findIndex(item =>
+        item.lessonId === currentLessonSlug &&
+        (item.sublessonId === currentSublessonSlug || (!item.sublessonId && !currentSublessonSlug))
+    );
+    updateLessonNavBar();
+}
+
+function updateLessonNavBar() {
+    const bar = document.getElementById('lessonNavBar');
+    const prevBtn = document.getElementById('prevLessonBtn');
+    const nextBtn = document.getElementById('nextLessonBtn');
+    const label = document.getElementById('lessonNavLabel');
+
+    if (!bar || currentRole === 'guest' || currentFlatIndex < 0) {
+        if (bar) bar.style.display = 'none';
+        return;
+    }
+
+    bar.style.display = 'flex';
+
+    const prev = flatLessonIndex[currentFlatIndex - 1];
+    const next = flatLessonIndex[currentFlatIndex + 1];
+
+    prevBtn.disabled = !prev;
+    nextBtn.disabled = !next;
+
+    const current = flatLessonIndex[currentFlatIndex];
+    label.textContent = current
+        ? `${current.lessonTitle}${current.sublessonTitle ? ' › ' + current.sublessonTitle : ''}`
+        : '';
+}
+
+function navigateLesson(direction) {
+    const target = flatLessonIndex[currentFlatIndex + direction];
+    if (!target) return;
+
+    currentLessonSlug = target.lessonId;
+
+    // Sidebar ထဲမှာ active ပြင်
+    document.querySelectorAll('.lesson-item').forEach(i => i.classList.remove('active', 'expanded'));
+    document.querySelectorAll('.sublesson-list').forEach(ul => ul.classList.remove('open'));
+    document.querySelectorAll('.sublesson-item').forEach(i => i.classList.remove('active'));
+
+    const lessonEl = document.querySelector(`.lesson-item[data-lesson="${target.lessonId}"]`);
+    if (lessonEl) {
+        lessonEl.classList.add('active', 'expanded');
+        const subList = document.getElementById(`sub-${target.lessonId}`);
+        if (subList) subList.classList.add('open');
+    }
+
+    if (target.sublessonId) {
+        currentSublessonSlug = target.sublessonId;
+        localStorage.setItem('ld_selected_sublesson', target.sublessonId);
+
+        db.collection('lessons').doc(target.lessonId)
+            .collection('sublessons').doc(target.sublessonId).get()
+            .then(doc => {
+                if (!doc.exists) return;
+                const data = doc.data();
+                let images = data.images || [];
+                const bodyHtml = localized(data.body);
+                const usedIndices = getUsedImageIndices(bodyHtml);
+                const remainingImages = images.filter((img, idx) => !usedIndices.has(idx));
+                const bodyWithImages = renderBodyWithImages(bodyHtml, images);
+                const box = document.getElementById('lessonContent');
+                box.innerHTML = `
+                    <div class="lesson-title-row">
+                        <h2 class="lesson-title">${escapeHtml(localized(data.title))}</h2>
+                    </div>
+                    ${renderLessonImages(remainingImages)}
+                    <div class="lesson-body">${bodyWithImages}</div>
+                `;
+            });
+
+        renderQuizQuestions(lastSnapshotDocs, target.sublessonId);
+        loadSublessons(target.lessonId);
+    } else {
+        currentSublessonSlug = null;
+        localStorage.removeItem('ld_selected_sublesson');
+        watchLesson(target.lessonId);
+        loadSublessons(target.lessonId);
+    }
+
+    localStorage.setItem('ld_selected_lesson', target.lessonId);
+    currentFlatIndex = currentFlatIndex + direction;
+    updateLessonNavBar();
+
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+}
+
+function selectSublesson(el, lessonId, sublessonId) {
+    if (currentRole === 'guest') { openModal('login'); return; }
+
+    document.querySelectorAll('.sublesson-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+
+    currentSublessonSlug = sublessonId;
+    localStorage.setItem('ld_selected_sublesson', sublessonId);
+
+    const box = document.getElementById('lessonContent');
+    box.innerHTML = '<p class="lesson-loading">Loading...</p>';
+
+    db.collection('lessons').doc(lessonId).collection('sublessons').doc(sublessonId).get()
+        .then(doc => {
+            if (!doc.exists) {
+                box.innerHTML = '<p class="lesson-empty">ဒီ sub-lesson ကို ဖျက်ပစ်ပြီးပါပြီ။</p>';
+                return;
+            }
+            const data = doc.data();
+            let images = data.images || [];
+            const bodyHtml = localized(data.body);
+            const usedIndices = getUsedImageIndices(bodyHtml);
+            const remainingImages = images.filter((img, idx) => !usedIndices.has(idx));
+            const bodyWithImages = renderBodyWithImages(bodyHtml, images);
+
+            box.innerHTML = `
+                <div class="lesson-title-row">
+                    <h2 class="lesson-title">${escapeHtml(localized(data.title))}</h2>
+                    ${currentRole === 'admin' ? `
+                    <div class="q-admin-actions">
+                        <button class="q-icon-btn" onclick="editSublesson('${lessonId}','${doc.id}')"><i class="ti ti-pencil"></i></button>
+                        <button class="q-icon-btn danger" onclick="deleteSublesson('${lessonId}','${doc.id}')"><i class="ti ti-trash"></i></button>
+                    </div>` : ''}
+                </div>
+                ${renderLessonImages(remainingImages)}
+                <div class="lesson-body">${bodyWithImages}</div>
+            `;
+        });
+
+    renderQuizQuestions(lastSnapshotDocs, sublessonId);
+    currentFlatIndex = flatLessonIndex.findIndex(item =>
+    item.lessonId === lessonId && item.sublessonId === sublessonId
+    );
+    updateLessonNavBar();
+    updateNoteFabVisibility();
+    toggleSidebar(false);
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+}
+
+let editingSublessonId = null;
+let editingSublessonParentId = null;
+
+function openSublessonComposer(lessonId) {
+    editingSublessonId = null;
+    editingSublessonParentId = lessonId;
     document.getElementById('newLessonTitle').value = '';
     document.getElementById('newLessonBody').value = '';
     clearImageRows();
-    document.getElementById('lessonSaveBtn').textContent = 'Save lesson';
+    document.getElementById('lessonSaveBtn').textContent = 'Post sub-lesson';
+    document.getElementById('lessonFormBox').style.display = 'flex';
+    document.getElementById('lessonFormBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function editSublesson(lessonId, sublessonId) {
+    editingSublessonParentId = lessonId;
+    editingSublessonId = sublessonId;
+
+    db.collection('lessons').doc(lessonId).collection('sublessons').doc(sublessonId).get()
+        .then(doc => {
+            if (!doc.exists) return;
+            const data = doc.data();
+            document.getElementById('newLessonTitle').value = getLangField(data.title, 'en');
+            document.getElementById('newLessonBody').value = getLangField(data.body, 'en');
+            clearImageRows();
+            (data.images || []).forEach(img => addImageRow(img.url, img.size));
+            document.getElementById('lessonSaveBtn').textContent = 'Save changes';
+            document.getElementById('lessonFormBox').style.display = 'flex';
+            document.getElementById('lessonFormBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+}
+
+function deleteSublesson(lessonId, sublessonId) {
+    if (!confirm('ဒီ sub-lesson ကို ဖျက်မှာ သေချာပါသလား?')) return;
+    db.collection('lessons').doc(lessonId).collection('sublessons').doc(sublessonId)
+        .delete()
+        .then(() => loadSublessons(lessonId))
+        .catch(err => alert(err.message));
+}
+
+/* ---- Composer: add / edit ---- */
+function openLessonComposer() {
+    editingLessonId = null;
+    editingSublessonId = null;
+    editingSublessonParentId = null;
+    document.getElementById('newLessonTitle').value = '';
+    document.getElementById('newLessonBody').value = '';
+    clearImageRows();
+    document.getElementById('lessonSaveBtn').textContent = 'Post lesson';
     document.getElementById('lessonFormBox').style.display = 'flex';
     document.getElementById('lessonFormBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -284,23 +634,29 @@ function saveLessonForm() {
     let titleObj = { en: title };
     let bodyObj = { en: body };
 
-    if (editingLessonId) {
-        const existing = lastLessonDocs.find(d => d.id === editingLessonId);
-        if (existing) {
-            const data = existing.data();
-            titleObj = { ...(typeof data.title === 'object' ? data.title : {}), en: title };
-            bodyObj = { ...(typeof data.body === 'object' ? data.body : {}), en: body };
+    const editingId = editingSublessonId || editingLessonId;
+
+    if (editingId) {
+        const isSublesson = !!editingSublessonId;
+        const existingData = isSublesson ? null : lastLessonDocs.find(d => d.id === editingLessonId)?.data();
+        if (existingData) {
+            titleObj = { ...(typeof existingData.title === 'object' ? existingData.title : {}), en: title };
+            bodyObj = { ...(typeof existingData.body === 'object' ? existingData.body : {}), en: body };
         }
     }
 
-    const action = editingLessonId
-        ? lessonsRef.doc(editingLessonId).update({
+    const ref = editingSublessonParentId
+        ? db.collection('lessons').doc(editingSublessonParentId).collection('sublessons')
+        : lessonsRef;
+
+    const action = editingId
+        ? ref.doc(editingId).update({
             title: titleObj,
             body: bodyObj,
             images,
             imageUrl: firebase.firestore.FieldValue.delete()
         })
-        : lessonsRef.add({
+        : ref.add({
             title: titleObj,
             body: bodyObj,
             images,
@@ -309,12 +665,15 @@ function saveLessonForm() {
         });
 
     action.then(() => {
+        if (editingSublessonParentId) loadSublessons(editingSublessonParentId);
+        editingSublessonParentId = null;
+        editingSublessonId = null;
         closeLessonComposer();
     }).catch(err => {
         alert(err.message);
     }).finally(() => {
         saveBtn.disabled = false;
-        saveBtn.textContent = editingLessonId ? 'Save changes' : 'Save lesson';
+        saveBtn.textContent = 'Post lesson';
     });
 }
 
@@ -453,9 +812,14 @@ auth.onAuthStateChanged(async (user) => {
 
     document.getElementById('addBox').style.display = currentRole === 'admin' ? 'block' : 'none';
     document.getElementById('lessonAddTrigger').style.display = currentRole === 'admin' ? 'inline-flex' : 'none';
+    const feedbackMenuItem = document.getElementById('feedbackMenuItem');
+    if (feedbackMenuItem) {
+    feedbackMenuItem.style.display = currentRole === 'admin' ? 'flex' : 'none';
+    }
     document.querySelector('.quiz-section').style.display = currentRole === 'guest' ? 'none' : 'block';
     if (currentLessonSlug) watchLesson(currentLessonSlug);
     updateNoteFabVisibility();
+    updateLessonNavBar();
 });
 
 function handleAuthSubmit() {
@@ -528,16 +892,18 @@ quizRef.orderBy('createdAt', 'asc').onSnapshot(snapshot => {
     renderQuizQuestions(lastSnapshotDocs);
 });
 
-function renderQuizQuestions(docs) {
+function renderQuizQuestions(docs, sublessonId) {
     const container = document.getElementById('quizListContainer');
     if (!container) return;
 
-    if (!currentLessonSlug) {
-        container.innerHTML = '<p class="quiz-empty-hint">ဘယ်ဘက် sidebar ကနေ lesson တစ်ခု ရွေးပြီးမှ ၎င်းနှင့်သက်ဆိုင်သော quiz မေးခွန်းများ ပေါ်ပါမည်။</p>';
+    const targetId = sublessonId || currentSublessonSlug;
+
+    if (!targetId) {
+        container.innerHTML = '<p class="quiz-empty-hint">Sub-lesson တစ်ခု ရွေးပြီးမှ quiz မေးခွန်းများ ပေါ်ပါမည်။</p>';
         return;
     }
 
-    const filtered = docs.filter(doc => doc.data().lessonId === currentLessonSlug);
+    const filtered = docs.filter(doc => doc.data().lessonId === targetId);
     container.innerHTML = '';
     filtered.forEach(doc => {
         const entry = doc.data();
@@ -618,6 +984,7 @@ function toggleUserMenu(e) {
     const menu = document.getElementById('userMenu');
     const btn = document.getElementById('userTrigger');
     const isOpen = menu.classList.contains('open');
+    closeLangMenu();
     menu.classList.toggle('open', !isOpen);
     btn.setAttribute('aria-expanded', String(!isOpen));
 }
@@ -628,8 +995,11 @@ function closeUserMenu() {
 }
 
 document.addEventListener('click', (e) => {
-    const chip = document.querySelector('.user-chip');
-    if (chip && !chip.contains(e.target)) closeUserMenu();
+    const langSwitcher = document.querySelector('.lang-switcher');
+    if (langSwitcher && !langSwitcher.contains(e.target)) closeLangMenu();
+
+    const userChip = document.querySelector('.user-chip');
+    if (userChip && !userChip.contains(e.target)) closeUserMenu();
 });
 
 function toggleAddForm(forceOpen) {
@@ -697,8 +1067,10 @@ function deleteQuestion(id) {
 }
 
 function postQuestion() {
-    if (!currentLessonSlug) {
-        alert('ဘယ်ဘက် sidebar ကနေ lesson တစ်ခု ရွေးပြီးမှ မေးခွန်းထည့်နိုင်ပါမည်။');
+    const targetLessonId = currentSublessonSlug || currentLessonSlug;
+
+    if (!targetLessonId) {
+        alert('Sub-lesson တစ်ခု ရွေးပြီးမှ မေးခွန်းထည့်နိုင်ပါမည်။');
         return;
     }
 
@@ -722,7 +1094,12 @@ function postQuestion() {
         }
     }
 
-    const payload = { text: textObj, answer: pendingAnswer, explanation: explanationObj, lessonId: currentLessonSlug };
+    const payload = {
+        text: textObj,
+        answer: pendingAnswer,
+        explanation: explanationObj,
+        lessonId: targetLessonId
+    };
 
     const action = editingQuestionId
         ? quizRef.doc(editingQuestionId).update(payload)
@@ -764,6 +1141,11 @@ function seedInitialQuestions() {
     console.log('Seed ပြီးပါပြီ။');
 }
 
+let flatLessonIndex = []; // [{lessonId, sublessonId, lessonTitle, sublessonTitle}]
+let currentFlatIndex = -1;
+
+
+
 
 
 
@@ -790,7 +1172,8 @@ function openNotePanel() {
 }
 
 function closeNotePanel() {
-    document.getElementById('noteOverlay').classList.remove('open');
+    const overlay = document.getElementById('noteOverlay');
+    if (overlay) overlay.classList.remove('open');
 }
 
 function handleNoteOverlayClick(e) {
@@ -922,6 +1305,57 @@ function closeProfilePanel() {
 
 function handleProfileOverlayClick(e) {
     if (e.target.id === 'profileOverlay') closeProfilePanel();
+}
+
+/* ---- Feedback ---- */
+let currentRating = 0;
+
+function openFeedbackPanel() {
+    closeUserMenu();
+    currentRating = 0;
+    document.getElementById('feedbackComment').value = '';
+    document.querySelectorAll('.star').forEach(s => s.classList.remove('active'));
+    document.getElementById('feedbackModal').classList.add('open');
+}
+
+function closeFeedbackPanel() {
+    document.getElementById('feedbackModal').classList.remove('open');
+}
+
+function setRating(value) {
+    currentRating = value;
+    document.querySelectorAll('.star').forEach(s => {
+        s.classList.toggle('active', parseInt(s.dataset.value) <= value);
+    });
+}
+
+function submitFeedback() {
+    if (currentRating === 0) {
+        alert('ကြယ် အနည်းဆုံး ၁ လုံး ရွေးပါ။');
+        return;
+    }
+    const comment = document.getElementById('feedbackComment').value.trim();
+    if (!comment) {
+        alert('Comment ရေးပါ။');
+        return;
+    }
+
+    const userData = { uid: currentUser.uid };
+    db.collection('users').doc(currentUser.uid).get().then(doc => {
+        const data = doc.exists ? doc.data() : {};
+        const name = `${data.firstName || ''} ${data.lastName || ''}`.trim() || currentUser.email;
+
+        return db.collection('feedbacks').add({
+            uid: currentUser.uid,
+            name,
+            rating: currentRating,
+            comment,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }).then(() => {
+        closeFeedbackPanel();
+        alert('Feedback ပေးပို့ပြီးပါပြီ။ ကျေးဇူးတင်ပါသည်။');
+    }).catch(err => alert(err.message));
 }
 
 

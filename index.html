@@ -79,8 +79,11 @@
                         <li class="user-menu-item" onclick="window.location.href='mailto:support@learnanddrive.app?subject=Help%20%26%20Support'">
                             <i class="ti ti-help-circle"></i> Help &amp; Support
                         </li>
-                        <li class="user-menu-item" onclick="window.location.href='mailto:support@learnanddrive.app?subject=Feedback'">
+                        <li class="user-menu-item" onclick="openFeedbackPanel()">
                             <i class="ti ti-message-2"></i> Give Feedback
+                        </li>
+                        <li class="user-menu-item admin-only" id="feedbackMenuItem" style="display:none;" onclick="window.location.href='pages/admin-feedback.html'">
+                            <i class="ti ti-message-2"></i> View Feedback
                         </li>
                         <li class="user-menu-divider"></li>
                         <li class="user-menu-item" onclick="handleLogout()">
@@ -234,6 +237,16 @@
                     
 
                     </div>
+                    <!-- Prev / Next navigation -->
+                    <div class="lesson-nav-bar" id="lessonNavBar" style="display:none;">
+                        <button class="lesson-nav-btn" id="prevLessonBtn" onclick="navigateLesson(-1)">
+                            <i class="ti ti-arrow-left"></i> Previous
+                        </button>
+                        <span class="lesson-nav-label" id="lessonNavLabel"></span>
+                        <button class="lesson-nav-btn" id="nextLessonBtn" onclick="navigateLesson(1)">
+                            Next <i class="ti ti-arrow-right"></i>
+                        </button>
+                    </div>
                 </section>
 
             </main>
@@ -356,7 +369,7 @@
         </button>
 
         <!-- Note Editor Panel -->
-        <div class="note-overlay" id="noteOverlay" onclick="handleNoteOverlayClick(event)">
+        <div class="note-overlay" id="noteOverlay">
             <div class="note-panel">
                 <div class="note-panel-header">
                     <h3>Note — <span id="noteLessonTitle"></span></h3>
@@ -402,6 +415,33 @@
                     <div class="profile-row"><span class="profile-label">Birthday</span><span id="profileBirthday">-</span></div>
                     <div class="profile-row"><span class="profile-label">Role</span><span id="profileRole">-</span></div>
                 </div>
+            </div>
+        </div>
+
+
+        <!-- Feedback Panel -->
+        <div class="modal-overlay" id="feedbackModal">
+            <div class="modal-box feedback-box" role="dialog">
+                <button class="modal-close" onclick="closeFeedbackPanel()">
+                    <i class="ti ti-x"></i>
+                </button>
+                <h3 id="feedbackTitle">Give Feedback</h3>
+                <p class="modal-sub">သင့်အတွေ့အကြုံကို မျှဝေပေးပါ။</p>
+
+                <div class="feedback-stars" id="feedbackStars">
+                    <span class="star" data-value="1" onclick="setRating(1)"><i class="ti ti-star"></i></span>
+                    <span class="star" data-value="2" onclick="setRating(2)"><i class="ti ti-star"></i></span>
+                    <span class="star" data-value="3" onclick="setRating(3)"><i class="ti ti-star"></i></span>
+                    <span class="star" data-value="4" onclick="setRating(4)"><i class="ti ti-star"></i></span>
+                    <span class="star" data-value="5" onclick="setRating(5)"><i class="ti ti-star"></i></span>
+                </div>
+
+                <div class="modal-field">
+                    <label for="feedbackComment">Comment</label>
+                    <textarea id="feedbackComment" rows="4" placeholder="သင့်အကြံပြုချက်ကို ရေးပါ..."></textarea>
+                </div>
+
+                <button class="modal-submit" onclick="submitFeedback()">Send Feedback</button>
             </div>
         </div>
 
